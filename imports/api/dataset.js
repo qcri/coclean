@@ -9,7 +9,8 @@ Dataset.before.insert(function (userId, doc) {
       
       doc.createdAt = Date.now();
       doc.updatedAt = Date.now();
-      doc.userId = Meteor.userId();
+      if (!doc.userId)
+        doc.userId = Meteor.userId();
   } 
 })
 
