@@ -3,6 +3,7 @@ import { HotTable } from '@handsontable/react';
 import { withTracker } from 'meteor/react-meteor-data';
 import Dataset from '../api/dataset.js'
 import { Meteor } from 'meteor/meteor';
+import Handsontable from 'handsontable';
 import 'handsontable/dist/handsontable.full.css';
 
 class Grid extends React.Component {
@@ -27,6 +28,12 @@ class Grid extends React.Component {
     this.props.myUpdates.map((cell) => {
         this.updateData(cell)
     }); 
+
+    var dirtyCellsByOthers = "";
+    this.props.othersUpdates.map((cell) => {
+        dirtyCellsByOthers += cell.i + ',' + cell.j + ';'
+    });
+
     return (<HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
         data:this.data,
         colHeaders:true,
@@ -42,12 +49,21 @@ class Grid extends React.Component {
         allowInsertColumn: false,
         allowRemoveRow: false,
         allowRemoveColumn: false,
+        renderer: function(instance, td, row, col, prop, value, cellProperties) {
+            Handsontable.renderers.TextRenderer.apply(this, arguments);
+            // apply style, or better to have class name with external styles
+            if (dirtyCellsByOthers.indexOf(row + ',' + col + ';') > -1) {
+                td.style.background = 'red';
+            }
+            return td;
+        },
 
         licenseKey:'non-commercial-and-evaluation',
         afterChange: (changes) => {
             if(changes){
                 changes.forEach(([row, prop, oldValue, newValue]) => {
-                    Dataset.insert({i:row, j:prop, value:newValue})
+                    if (oldValue !== newValue)
+                        Dataset.insert({i:row, j:prop, value:newValue})
                 });
             }
           }
