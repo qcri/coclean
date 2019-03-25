@@ -2,24 +2,32 @@ import React from 'react';
 import { HotTable } from '@handsontable/react';
 import { withTracker } from 'meteor/react-meteor-data';
 import Dataset from '../api/dataset.js'
+import { Meteor } from 'meteor/meteor';
 import 'handsontable/dist/handsontable.full.css';
-
-
 
 class Grid extends React.Component {
   constructor(props) {
     super(props);
+    this.refToHotIns=React.createRef();
     this.data = []
   }
 
-  render() {
-    this.props.dataset.map((cell) => {
-        if (!this.data[cell.i])
-            this.data[cell.i] = []
+  updateData(cell){
+    const i = cell.i,  j = cell.j, value = cell.value 
+    if (!this.data[i])
+        this.data[i] = []
 
-        this.data[cell.i][cell.j] = cell.value
-    });  
-    return (<HotTable settings={{
+    this.data[i][j] = value
+  }
+
+  render() {
+    this.props.original.map((cell) => {
+        this.updateData(cell)
+    }); 
+    this.props.myUpdates.map((cell) => {
+        this.updateData(cell)
+    }); 
+    return (<HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
         data:this.data,
         colHeaders:true,
         rowHeaders:true,
@@ -39,21 +47,23 @@ class Grid extends React.Component {
         afterChange: (changes) => {
             if(changes){
                 changes.forEach(([row, prop, oldValue, newValue]) => {
-                    console.log('insert')
-                    // Dataset.insert({i:row, j:prop, value:newValue})
+                    Dataset.insert({i:row, j:prop, value:newValue})
                 });
             }
           }
         }} 
-
     />);
   }
 }
 
-
 export default withTracker(() => {
-    dataset= Dataset.find({}, { sort: { createdAt: 1 } }).fetch()
+    const original = Dataset.find({original:{$eq:true}}).fetch()
+    const myUpdates = Dataset.find({userId: {$eq:Meteor.userId()}}, { sort: { createdAt: 1 } }).fetch()
+    const othersUpdates = Dataset.find({userId:{$exists:true, $ne:Meteor.userId()}}).fetch()
+   
     return {
-        dataset:dataset
+        original,
+        myUpdates,
+        othersUpdates,
     }
 })(Grid);

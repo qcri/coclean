@@ -13,7 +13,7 @@ Meteor.startup(() => {
     for (i=0; i<data.length; i++){
       for (j=0; j<data[i].length; j++){ 
         value = data[i][j]
-        Dataset.insert({i,j,value,userId:'original'})
+        Dataset.insert({i,j,value,original:true})
       }
     }
   }
