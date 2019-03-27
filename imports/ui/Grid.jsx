@@ -33,7 +33,7 @@ class Grid extends React.Component {
 
     var dirtyCellsByOthers = "";
     this.props.othersUpdates.map((cell) => {
-        dirtyCellsByOthers += cell.i + ',' + cell.j + ';'
+        dirtyCellsByOthers += '(' + cell.i + ',' + cell.j + ')'
     });
 
     const findUniqueValuesByOthers = ((i,j) => _.uniq(Dataset.find({userId:{$ne:Meteor.userId()}, i, j}, {
@@ -109,7 +109,7 @@ class Grid extends React.Component {
         renderer: function(instance, td, row, col, prop, value, cellProperties) {
             Handsontable.renderers.TextRenderer.apply(this, arguments);
             // apply style, or better to have class name with external styles
-            if (dirtyCellsByOthers.indexOf(row + ',' + col + ';') > -1) {
+            if (dirtyCellsByOthers.indexOf('(' +row + ',' + col + ')') > -1) {
                 td.style.background = 'red';
             }
             return td;
