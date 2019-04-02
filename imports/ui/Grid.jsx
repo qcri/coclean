@@ -129,10 +129,13 @@ class Grid extends React.Component {
   }
 }
 
-export default withTracker(() => {
-    const original = Dataset.find({original:{$eq:true}}).fetch()
-    const myUpdates = Dataset.find({userId: {$eq:Meteor.userId()}}, { sort: { createdAt: 1 } }).fetch()
-    const othersUpdates = Dataset.find({userId:{$exists:true, $ne:Meteor.userId()}}).fetch()
+export default withTracker(props =>  {
+    dataset_id = props.match.params.dataset_id
+    Dataset.find_in_current_dataset = (selector, options) => { return Dataset.find(_.extend(selector, { dataset_id }, options))}
+
+    const original = Dataset.find_in_current_dataset({original:{$eq:true}}).fetch()
+    const myUpdates = Dataset.find_in_current_dataset({userId: {$eq:Meteor.userId()}}, { sort: { createdAt: 1 } }).fetch()
+    const othersUpdates = Dataset.find_in_current_dataset({userId:{$exists:true, $ne:Meteor.userId()}}).fetch()
    
     return {
         original,
