@@ -1,9 +1,10 @@
 import { Meteor } from 'meteor/meteor';
 import React from 'react';
 import Grid from './Grid.jsx';
+import DatasetUploader from '/imports/ui/DatasetUploader';
 import AccountsUIWrapper from './AccountsUIWrapper.jsx'
 import { withTracker } from 'meteor/react-meteor-data';
-import { BrowserRouter as Router, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 
 
 class App extends React.Component{
@@ -18,7 +19,10 @@ class App extends React.Component{
         <AccountsUIWrapper />
           { Meteor.userId() ?
               <Router>
-                <Route path="/datasets/:dataset_id" component={Grid} />
+                <Switch>
+                  <Route path="/dataset/:dataset_id" component={Grid} />
+                  <Route component={DatasetUploader} />
+                </Switch>
               </Router>
               :
               <h1>Please log in first</h1>
