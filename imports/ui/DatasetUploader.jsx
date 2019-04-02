@@ -22,8 +22,11 @@ export default class DatasetUploader extends Component{
             return <Redirect to="/dataset/abcdef" /> 
         }
 
-        return <CSVReader
-                onFileLoaded={this.handleFileLoaded}
-                />
+        return (
+            <div>
+                <h2> Upload your dataset</h2>
+                <CSVReader onFileLoaded={this.handleFileLoaded} />
+            </div>
+        )
     }
 }
