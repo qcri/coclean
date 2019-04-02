@@ -12,6 +12,7 @@ class Grid extends React.Component {
     super(props);
     this.refToHotIns=React.createRef();
     this.data = []
+    this.dataset_id = props.dataset_id
     window._ = _
   }
 
@@ -120,7 +121,7 @@ class Grid extends React.Component {
             if(changes){
                 changes.forEach(([row, prop, oldValue, newValue]) => {
                     if (oldValue !== newValue)
-                        Dataset.insert({i:row, j:prop, value:newValue})
+                        Dataset.insert({i:row, j:prop, value:newValue, dataset_id:this.dataset_id})
                 });
             }
           }
@@ -131,15 +132,21 @@ class Grid extends React.Component {
 
 export default withTracker(props =>  {
     dataset_id = props.match.params.dataset_id
-    Dataset.find_in_current_dataset = (selector, options) => { return Dataset.find(_.extend(selector, { dataset_id }, options))}
+    const original = Dataset.find({original:{$eq:true}}).fetch()
+    const myUpdates = Dataset.find({
+        dataset_id:dataset_id,
+        userId: {$eq:Meteor.userId()},
+        original:{$exists:false}}, { sort: { createdAt: 1 } }).fetch()
 
-    const original = Dataset.find_in_current_dataset({original:{$eq:true}}).fetch()
-    const myUpdates = Dataset.find_in_current_dataset({userId: {$eq:Meteor.userId()}}, { sort: { createdAt: 1 } }).fetch()
-    const othersUpdates = Dataset.find_in_current_dataset({userId:{$exists:true, $ne:Meteor.userId()}}).fetch()
+    const othersUpdates = Dataset.find({
+        dataset_id:dataset_id,
+        userId:{$ne:Meteor.userId()},
+        original:{$exists:false}}).fetch()
    
     return {
         original,
         myUpdates,
         othersUpdates,
+        dataset_id
     }
 })(Grid);
