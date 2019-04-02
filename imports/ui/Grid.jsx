@@ -42,91 +42,97 @@ class Grid extends React.Component {
     }).fetch().map(function(x) {
         return x.value;
     }), true))
-    return (<HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
-        data:this.data,
-        colHeaders:true,
-        rowHeaders:true,
-        width:"1400",
-        height:"500",
-        manualRowResize: true,
-        manualColumnResize: true,
-        contextMenu: true,
-        filters: true,
-        dropdownMenu: true,
-        allowInsertRow: false,
-        allowInsertColumn: false,
-        allowRemoveRow: false,
-        allowRemoveColumn: false,
-        contextMenu: {
-            items:{
-                ValuesFromOtherCollaborators:{
-                    name: 'Values from other collaborators',
-                    disabled: true
-                },
-                value0:{
-                    name: function () {
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values[0] ; 
-                    },
-                    hidden: function (){
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values.length <= 0 ; 
+    return (
+        <div>
+            <h3>Share this dataset with other collaborators: </h3>
+            <span> {document.URL}</span>
+            <HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
+                data:this.data,
+                colHeaders:true,
+                rowHeaders:true,
+                width:"1400",
+                height:"500",
+                manualRowResize: true,
+                manualColumnResize: true,
+                contextMenu: true,
+                filters: true,
+                dropdownMenu: true,
+                allowInsertRow: false,
+                allowInsertColumn: false,
+                allowRemoveRow: false,
+                allowRemoveColumn: false,
+                contextMenu: {
+                    items:{
+                        ValuesFromOtherCollaborators:{
+                            name: 'Values from other collaborators',
+                            disabled: true
+                        },
+                        value0:{
+                            name: function () {
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values[0] ; 
+                            },
+                            hidden: function (){
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values.length <= 0 ; 
+                            }
+                        },
+                        value1:{
+                            name: function () {
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values[1] ; 
+                            },
+                            hidden: function (){
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values.length <= 1 ; 
+                            }
+                        },
+                        value2:{
+                            name: function () {
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values[2] ; 
+                            },
+                            hidden: function (){
+                                const selected = this.getSelectedLast()
+                                const i = selected[0], j = selected[1]
+                                const values = findUniqueValuesByOthers(i,j)
+                                return values.length <= 2 ; 
+                            }
+                        },
                     }
                 },
-                value1:{
-                    name: function () {
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values[1] ; 
-                    },
-                    hidden: function (){
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values.length <= 1 ; 
+                renderer: function(instance, td, row, col, prop, value, cellProperties) {
+                    Handsontable.renderers.TextRenderer.apply(this, arguments);
+                    // apply style, or better to have class name with external styles
+                    if (dirtyCellsByOthers.indexOf('(' +row + ',' + col + ')') > -1) {
+                        td.style.background = 'red';
                     }
+                    return td;
                 },
-                value2:{
-                    name: function () {
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values[2] ; 
-                    },
-                    hidden: function (){
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = findUniqueValuesByOthers(i,j)
-                        return values.length <= 2 ; 
-                    }
-                },
-            }
-        },
-        renderer: function(instance, td, row, col, prop, value, cellProperties) {
-            Handsontable.renderers.TextRenderer.apply(this, arguments);
-            // apply style, or better to have class name with external styles
-            if (dirtyCellsByOthers.indexOf('(' +row + ',' + col + ')') > -1) {
-                td.style.background = 'red';
-            }
-            return td;
-        },
 
-        licenseKey:'non-commercial-and-evaluation',
-        afterChange: (changes) => {
-            if(changes){
-                changes.forEach(([row, prop, oldValue, newValue]) => {
-                    if (oldValue !== newValue)
-                        Dataset.insert({i:row, j:prop, value:newValue, dataset_id:this.dataset_id})
-                });
-            }
-          }
-        }} 
-    />);
+                licenseKey:'non-commercial-and-evaluation',
+                afterChange: (changes) => {
+                    if(changes){
+                        changes.forEach(([row, prop, oldValue, newValue]) => {
+                            if (oldValue !== newValue)
+                                Dataset.insert({i:row, j:prop, value:newValue, dataset_id:this.dataset_id})
+                        });
+                    }
+                }
+                }} 
+            />
+        </div>
+    );
   }
 }
 
