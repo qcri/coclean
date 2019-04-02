@@ -32,16 +32,53 @@ class Grid extends React.Component {
         this.updateData(cell)
     }); 
 
-    var dirtyCellsByOthers = "";
+    this.uniqValuesByOthers = []
     this.props.othersUpdates.map((cell) => {
-        dirtyCellsByOthers += '(' + cell.i + ',' + cell.j + ')'
+        const i = cell.i,  j = cell.j, value = cell.value 
+        this.uniqValuesByOthers[i] = this.uniqValuesByOthers[i] || []
+        this.uniqValuesByOthers[i][j] = this.uniqValuesByOthers[i][j] || []
+    
+        if (!this.uniqValuesByOthers[i][j].includes(value))
+            this.uniqValuesByOthers[i][j].push(value)
     });
 
-    const findUniqueValuesByOthers = ((i,j) => _.uniq(Dataset.find({userId:{$ne:Meteor.userId()}, i, j}, {
-        sort: {value: 1}, fields: {value: true}
-    }).fetch().map(function(x) {
-        return x.value;
-    }), true))
+    const ValuesByOthers = ((i,j) => {
+        const vals = this.uniqValuesByOthers
+        return (vals[i] && vals[i][j]) || []
+    })
+
+
+    const getContextMenueItems = ( () => {
+        var items = {
+            ValuesFromOtherCollaborators:{
+                name: 'Values from other collaborators',
+                disabled: true
+            }
+        }
+        for (var c=0; c<10; c++){
+            items['value'+c] = 
+            {
+                name: ((c) =>  {
+                    return function (){
+                        const selected = this.getSelectedLast()
+                        const i = selected[0], j = selected[1]
+                        const values = ValuesByOthers(i,j)
+                        return values[c] ; 
+                    }
+                })(c),
+                hidden:  ((c) =>  {
+                    return function (){
+                        const selected = this.getSelectedLast()
+                        const i = selected[0], j = selected[1]
+                        const values = ValuesByOthers(i,j)
+                        return values.length<=c ; 
+                    }
+                })(c)
+            }
+        }
+        return items
+    })
+    
     return (
         <div>
             <h3>Share this dataset with other collaborators: </h3>
@@ -62,59 +99,12 @@ class Grid extends React.Component {
                 allowRemoveRow: false,
                 allowRemoveColumn: false,
                 contextMenu: {
-                    items:{
-                        ValuesFromOtherCollaborators:{
-                            name: 'Values from other collaborators',
-                            disabled: true
-                        },
-                        value0:{
-                            name: function () {
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values[0] ; 
-                            },
-                            hidden: function (){
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values.length <= 0 ; 
-                            }
-                        },
-                        value1:{
-                            name: function () {
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values[1] ; 
-                            },
-                            hidden: function (){
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values.length <= 1 ; 
-                            }
-                        },
-                        value2:{
-                            name: function () {
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values[2] ; 
-                            },
-                            hidden: function (){
-                                const selected = this.getSelectedLast()
-                                const i = selected[0], j = selected[1]
-                                const values = findUniqueValuesByOthers(i,j)
-                                return values.length <= 2 ; 
-                            }
-                        },
-                    }
+                    items:getContextMenueItems()
                 },
                 renderer: function(instance, td, row, col, prop, value, cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
                     // apply style, or better to have class name with external styles
-                    if (dirtyCellsByOthers.indexOf('(' +row + ',' + col + ')') > -1) {
+                    if (ValuesByOthers(row,col).length) {
                         td.style.background = 'red';
                     }
                     return td;
@@ -147,8 +137,8 @@ export default withTracker(props =>  {
     const othersUpdates = Dataset.find({
         dataset_id:dataset_id,
         userId:{$ne:Meteor.userId()},
-        original:{$exists:false}}).fetch()
-   
+        original:{$exists:false}}).fetch() 
+            
     return {
         original,
         myUpdates,
