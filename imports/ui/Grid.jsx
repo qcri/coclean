@@ -11,37 +11,17 @@ class Grid extends React.Component {
   constructor(props) {
     super(props);
     this.refToHotIns=React.createRef();
-    this.data = []
-    this.datasetId = props.datasetId
     window._ = _
   }
-
-  updateData(cell){
-    const i = cell.i,  j = cell.j, value = cell.value 
-    this.data[i] = this.data[i] || []
-    this.data[i][j] = value
-  }
-
   render() {
-    this.props.original.map((cell) => {
-        this.updateData(cell)
-    }); 
+    var dataColne = JSON.parse(JSON.stringify(this.props.originalData));
     this.props.myUpdates.map((cell) => {
-        this.updateData(cell)
+        const i = cell.i,  j = cell.j, value = cell.value 
+        dataColne[i][j] = value
     }); 
 
-    this.uniqValuesByOthers = []
-    this.props.othersUpdates.map((cell) => {
-        const i = cell.i,  j = cell.j, value = cell.value 
-        this.uniqValuesByOthers[i] = this.uniqValuesByOthers[i] || []
-        this.uniqValuesByOthers[i][j] = this.uniqValuesByOthers[i][j] || []
-    
-        if (!this.uniqValuesByOthers[i][j].includes(value))
-            this.uniqValuesByOthers[i][j].push(value)
-    });
-
-    const ValuesByOthers = ((i,j) => {
-        const vals = this.uniqValuesByOthers
+    const getValuesByOthers = ((i,j) => {
+        const vals = this.props.othersUpdates
         return (vals[i] && vals[i][j]) || []
     })
 
@@ -58,13 +38,13 @@ class Grid extends React.Component {
             {
                 name: ((c) =>  {
                     return function (){
-                        const values = ValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        const values = getValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
                         return values[c] ; 
                     }
                 })(c),
                 hidden:  ((c) =>  {
                     return function (){
-                        const values = ValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        const values = getValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
                         return values.length<=c ; 
                     }
                 })(c)
@@ -78,8 +58,8 @@ class Grid extends React.Component {
             <h3>Share this dataset with other collaborators: </h3>
             <span> {document.URL}</span>
             <HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
-                data:this.data,
-                colHeaders:this.data[-1],
+                data:dataColne,
+                colHeaders:this.props.header,
                 rowHeaders:true,
                 width:"1400",
                 height:"500",
@@ -98,7 +78,7 @@ class Grid extends React.Component {
                 renderer: function(instance, td, row, col, prop, value, cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
                     // apply style, or better to have class name with external styles
-                    if (ValuesByOthers(row,col).length) {
+                    if (getValuesByOthers(row,col).length) {
                         td.style.background = 'red';
                     }
                     return td;
@@ -109,7 +89,7 @@ class Grid extends React.Component {
                     if(changes){
                         changes.forEach(([row, prop, oldValue, newValue]) => {
                             if (oldValue !== newValue)
-                                Dataset.insert({i:row, j:prop, value:newValue, datasetId:this.datasetId})
+                                Dataset.insert({i:row, j:prop, value:newValue, datasetId:this.props.datasetId})
                         });
                     }
                 }
@@ -122,27 +102,43 @@ class Grid extends React.Component {
 
 export default withTracker(props =>  {
     datasetId = props.match.params.datasetId
-    const original = Dataset.find({
+
+    originalData = []
+    Dataset.find({
         datasetId,
         original:true
-    }).fetch()
+    }).fetch().map((cell) => {
+        const i = cell.i,  j = cell.j, value = cell.value 
+        originalData[i] = originalData[i] || []
+        originalData[i][j] = value
+    })
+    header = originalData[-1]
 
-    const myUpdates = Dataset.find({
+    myUpdates = Dataset.find({
         datasetId,
         original:{$exists:false},
         userId:Meteor.userId()}, { sort: { createdAt: 1 }
      }).fetch()
 
-    const othersUpdates = Dataset.find({
+    othersUpdates = []
+    Dataset.find({
         datasetId,
         original:{$exists:false},
         userId:{$ne:Meteor.userId()}
-    }).fetch() 
+    }).fetch().map((cell) => {
+        const i = cell.i,  j = cell.j, value = cell.value 
+        this.othersUpdates[i] = this.othersUpdates[i] || []
+        this.othersUpdates[i][j] = this.othersUpdates[i][j] || []
+    
+        if (!this.othersUpdates[i][j].includes(value))
+            this.othersUpdates[i][j].push(value)
+    });
             
     return {
-        original,
+        datasetId,
+        header,
+        originalData,
         myUpdates,
         othersUpdates,
-        datasetId
     }
 })(Grid);
