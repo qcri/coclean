@@ -17,7 +17,12 @@ export default class DatasetUploader extends Component{
         for (var i=0; i<data.length; i++){
             for (var j=0; j<data[i].length; j++){ 
               var value = data[i][j]
-              Dataset.insert({i,j,value,dataset_id,original:true})
+              Dataset.insert({
+                  i,
+                  j,
+                  value,
+                  dataset_id,
+                  original:true})
             }
           }
         this.setState({

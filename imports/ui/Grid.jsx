@@ -18,9 +18,7 @@ class Grid extends React.Component {
 
   updateData(cell){
     const i = cell.i,  j = cell.j, value = cell.value 
-    if (!this.data[i])
-        this.data[i] = []
-
+    this.data[i] = this.data[i] || []
     this.data[i][j] = value
   }
 
@@ -60,17 +58,13 @@ class Grid extends React.Component {
             {
                 name: ((c) =>  {
                     return function (){
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = ValuesByOthers(i,j)
+                        const values = ValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
                         return values[c] ; 
                     }
                 })(c),
                 hidden:  ((c) =>  {
                     return function (){
-                        const selected = this.getSelectedLast()
-                        const i = selected[0], j = selected[1]
-                        const values = ValuesByOthers(i,j)
+                        const values = ValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
                         return values.length<=c ; 
                     }
                 })(c)
@@ -128,16 +122,22 @@ class Grid extends React.Component {
 
 export default withTracker(props =>  {
     dataset_id = props.match.params.dataset_id
-    const original = Dataset.find({original:{$eq:true}}).fetch()
+    const original = Dataset.find({
+        dataset_id,
+        original:true
+    }).fetch()
+
     const myUpdates = Dataset.find({
-        dataset_id:dataset_id,
-        userId: {$eq:Meteor.userId()},
-        original:{$exists:false}}, { sort: { createdAt: 1 } }).fetch()
+        dataset_id,
+        original:{$exists:false},
+        userId:Meteor.userId()}, { sort: { createdAt: 1 }
+     }).fetch()
 
     const othersUpdates = Dataset.find({
-        dataset_id:dataset_id,
-        userId:{$ne:Meteor.userId()},
-        original:{$exists:false}}).fetch() 
+        dataset_id,
+        original:{$exists:false},
+        userId:{$ne:Meteor.userId()}
+    }).fetch() 
             
     return {
         original,
