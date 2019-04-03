@@ -79,7 +79,7 @@ class Grid extends React.Component {
             <span> {document.URL}</span>
             <HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
                 data:this.data,
-                colHeaders:true,
+                colHeaders:this.data[-1],
                 rowHeaders:true,
                 width:"1400",
                 height:"500",

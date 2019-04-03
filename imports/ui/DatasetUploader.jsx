@@ -18,7 +18,7 @@ export default class DatasetUploader extends Component{
             for (var j=0; j<data[i].length; j++){ 
               var value = data[i][j]
               Dataset.insert({
-                  i,
+                  i: (i-1),   // to account for column headers
                   j,
                   value,
                   datasetId,
