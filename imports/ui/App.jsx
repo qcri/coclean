@@ -20,7 +20,7 @@ class App extends React.Component{
           { Meteor.userId() ?
               <Router>
                 <Switch>
-                  <Route path="/dataset/:dataset_id" component={Grid} />
+                  <Route path="/dataset/:datasetId" component={Grid} />
                   <Route component={DatasetUploader} />
                 </Switch>
               </Router>

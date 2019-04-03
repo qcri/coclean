@@ -8,12 +8,12 @@ export default class DatasetUploader extends Component{
     constructor(){
         super()
         this.state = {
-            dataset_id : null
+            datasetId : null
         }
     }
 
     handleFileLoaded = data => {
-        var dataset_id = Random.id()
+        var datasetId = Random.id()
         for (var i=0; i<data.length; i++){
             for (var j=0; j<data[i].length; j++){ 
               var value = data[i][j]
@@ -21,18 +21,18 @@ export default class DatasetUploader extends Component{
                   i,
                   j,
                   value,
-                  dataset_id,
+                  datasetId,
                   original:true})
             }
           }
         this.setState({
-            dataset_id : dataset_id
+            datasetId
         })
         
     };
     render(){
-        if (this.state.dataset_id) {
-            return <Redirect to={"/dataset/" + this.state.dataset_id} /> 
+        if (this.state.datasetId) {
+            return <Redirect to={"/dataset/" + this.state.datasetId} /> 
         }
 
         return (
