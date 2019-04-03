@@ -2,6 +2,7 @@ import React from 'react';
 import { HotTable } from '@handsontable/react';
 import { withTracker } from 'meteor/react-meteor-data';
 import Dataset from '../api/dataset.js'
+import Flag from '../api/flag.js'
 import { Meteor } from 'meteor/meteor';
 import Handsontable from 'handsontable';
 import { _ } from 'meteor/underscore'
@@ -25,9 +26,22 @@ class Grid extends React.Component {
         return (vals[i] && vals[i][j]) || []
     })
 
+    const isFlagged = ((i,j) => {
+        flagged = this.props.flagged
+        return (flagged[i] && flagged[i][j]) || false
+    })
 
     const getContextMenueItems = ( () => {
         var items = {
+            flag:{
+                name:'Flag as dirty',
+                callback: ((key, selection, clickEvent) => { 
+                    const i = selection[0].end.row, j = selection[0].end.col
+                    if(!isFlagged(i,j))
+                        Flag.insert({i,j, datasetId:this.props.datasetId})
+                })
+            },
+            "sep1": {name: '---------'},
             ValuesFromOtherCollaborators:{
                 name: 'Values from other collaborators',
                 disabled: true
@@ -65,13 +79,13 @@ class Grid extends React.Component {
                 height:"500",
                 manualRowResize: true,
                 manualColumnResize: true,
-                contextMenu: true,
                 filters: true,
                 dropdownMenu: true,
                 allowInsertRow: false,
                 allowInsertColumn: false,
                 allowRemoveRow: false,
                 allowRemoveColumn: false,
+                licenseKey:'non-commercial-and-evaluation',
                 contextMenu: {
                     items:getContextMenueItems()
                 },
@@ -81,10 +95,12 @@ class Grid extends React.Component {
                     if (getValuesByOthers(row,col).length) {
                         td.style.background = 'red';
                     }
+                    if (isFlagged(row,col)) {
+                        td.style.background = 'yellow';
+                    }
                     return td;
                 },
 
-                licenseKey:'non-commercial-and-evaluation',
                 afterChange: (changes) => {
                     if(changes){
                         changes.forEach(([row, prop, oldValue, newValue]) => {
@@ -133,6 +149,15 @@ export default withTracker(props =>  {
         if (!this.othersUpdates[i][j].includes(value))
             this.othersUpdates[i][j].push(value)
     });
+
+    flagged = []
+    Flag.find({
+        datasetId,
+    }).fetch().map((cell) => {
+        const i = cell.i,  j = cell.j
+        flagged[i] = flagged[i] || []
+        flagged[i][j] = true
+    })
             
     return {
         datasetId,
@@ -140,5 +165,6 @@ export default withTracker(props =>  {
         originalData,
         myUpdates,
         othersUpdates,
+        flagged
     }
 })(Grid);
