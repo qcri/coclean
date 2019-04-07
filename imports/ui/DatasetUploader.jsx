@@ -40,12 +40,12 @@ export default class DatasetUploader extends Component{
                 <h2> Upload your dataset</h2>
                 <label>
                     Work Assignment Policy:
-                    <input type="text" name="work_assignment" value='Min 3 collaborators'/>
+                    <input type="text" name="work_assignment" defaultValue='Min 3 collaborators'/>
                 </label>
                 <br/>
                 <label>
                     Conflict Resolution Policy:
-                    <input type="text" name="conflict_resolution" value='Min 3 collaborators'/>
+                    <input type="text" name="conflict_resolution" defaultValue='Min 3 collaborators'/>
                 </label>
                 <CSVReader onFileLoaded={this.handleFileLoaded} />
             </div>
