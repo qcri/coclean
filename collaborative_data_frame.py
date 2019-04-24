@@ -20,8 +20,15 @@ class CollaborativeDataFrame(pd.DataFrame):
         self.original_df = df
         self.setup_widget()
 
-        
+    def commit(self, *args, **kwargs):
+        print('will commit here') 
 
+    def refresh(self, *args, **kwargs):
+        self.grid_widget.df = self
+
+    def list_my_updates(self):
+        return self.mask(self == self.original_df).stack()
+        
     def setup_widget(self):
         ### grid widget construction:
         grid_widget = qgrid.show_grid(self)
@@ -35,29 +42,19 @@ class CollaborativeDataFrame(pd.DataFrame):
 
         #refresh button
         refresh_button = Button(description='Refresh')
-        def refresh(button):
-            self.grid_widget.df = self
-
-        refresh_button.on_click(refresh)
+        refresh_button.on_click(self.refresh)
 
         #commit button
         commit_button = Button(description='Commit')
-        def commit(button):
-            print('will commit')
-
-        commit_button.on_click(commit)
+        commit_button.on_click(self.commit)
 
         def get_widget():
-            refresh(None)
+            self.refresh()
             return VBox([
                         HBox([refresh_button,commit_button]),
                         grid_widget
                 ])
         self.get_widget = get_widget
-
-
-    def list_my_updates(self):
-        return self.mask(self == self.original_df).stack()
 
 
 
