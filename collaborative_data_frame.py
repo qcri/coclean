@@ -16,15 +16,15 @@ class CollaborativeDataFrame(pd.DataFrame):
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
-        pd.DataFrame.__init__(self, df)
-        self.df = df
+        pd.DataFrame.__init__(self, df.copy())
+        self.original_df = df
         self.setup_widget()
 
         
 
     def setup_widget(self):
         ### grid widget construction:
-        grid_widget = qgrid.show_grid(self.df)
+        grid_widget = qgrid.show_grid(self)
         def handle_cell_edited(event, grid_widget):
             index, column, new_value = event['index'], event['column'], event['new']
             self.loc[index, column] = new_value 
@@ -50,15 +50,14 @@ class CollaborativeDataFrame(pd.DataFrame):
         def get_widget():
             refresh(None)
             return VBox([
-                        HBox([
-                                refresh_button,
-                                commit_button
-                        ]),
+                        HBox([refresh_button,commit_button]),
                         grid_widget
                 ])
         self.get_widget = get_widget
 
 
+    def list_my_updates(self):
+        return self.mask(self == self.original_df).stack()
 
 
 
