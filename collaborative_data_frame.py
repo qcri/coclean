@@ -1,22 +1,33 @@
 import pandas as pd
 import qgrid.grid
 
+from pymongo import MongoClient
+from io import StringIO
+from bson.objectid import ObjectId
+
+
 from ipywidgets.widgets import Button, VBox, HBox
 
 
 class CollaborativeDataFrame(pd.DataFrame):
-    def __init__(self, data):        
+    def __init__(self, data):
+        url = None      
         if isinstance(data, pd.DataFrame):
-            # TODO upload data and get unique id
             df = data
+
         elif isinstance(data, str):
-            # TODO fetch the data from url.
-            df = pd.read_csv(data)
+            # TODO fetch the data from url. temprarily we are using mongodb
+            
+            url = data
+            id = url[-24:]
+            data = MongoClient().db.datasets.find_one({'_id':ObjectId(id)})['data']
+            df = pd.read_csv(StringIO(data), index_col=0)
             
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
         pd.DataFrame.__init__(self, df.copy())
+        self.url = url
         self.original_df = df
         self.setup_widget()
 
@@ -28,7 +39,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
     def list_my_updates(self):
         return self.mask(self == self.original_df).stack()
-        
+
     def setup_widget(self):
         ### grid widget construction:
         grid_widget = qgrid.show_grid(self)
@@ -56,6 +67,16 @@ class CollaborativeDataFrame(pd.DataFrame):
                 ])
         self.get_widget = get_widget
 
+
+    def share(self):
+        if not self.url:
+            id = MongoClient().db.datasets.insert({'data': self.to_csv()})
+            self.url = f"http://0.0.0.0:3000/dataset/{id}"
+        else:
+            print('already shared!')
+
+        return self.url
+        
 
 
 
