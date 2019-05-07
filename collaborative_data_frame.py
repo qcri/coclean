@@ -7,7 +7,7 @@ from bson.objectid import ObjectId
 from bson.timestamp import Timestamp
 
 import math
-
+import collections
 import threading
 import time
 
@@ -36,8 +36,9 @@ class CollaborativeDataFrame(pd.DataFrame):
         pd.DataFrame.__init__(self, df.copy())
         self.db_client = db_client
         self.url = url
-        self.username = '' or kwargs.get('username', None)
+        self.user_id = '' or kwargs.get('user_id', None)
         self.original_df = df
+        self.collaborators = collections.defaultdict(lambda: pd.DataFrame().reindex_like(df))
 
         if self.url:
             self.monitor_changes()
@@ -47,7 +48,7 @@ class CollaborativeDataFrame(pd.DataFrame):
     def monitor_changes(self):
         id = self.url[-24:]
         def get_dataset_timestamp():
-            # logicfrom https://github.com/nswbmw/objectid-to-timestamp
+            # logic from https://github.com/nswbmw/objectid-to-timestamp
             seconds = int(id[0:8], 16)
             increament = math.floor(int(id[-6:], 16) / 16777.217)
             return Timestamp(seconds, increament)
@@ -55,12 +56,21 @@ class CollaborativeDataFrame(pd.DataFrame):
         def handle_changes():
             with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
                 for change in stream:
-                    # TODO Handle downloads 
-                    print('handling downloads ')
+                    document = change['fullDocument']
+                    user_id, index, column, new_value = [document[key] for key in ['user_id', 'index', 'column', 'new_value']]
+                    self.collaborators[user_id].loc[index, column] = new_value
 
         def handle_uploads():
+            self.last_update = pd.DataFrame().reindex_like(self.original_df)
             while True:
-                #TODO Handle uploads
+                new_updates = self.mask((self == self.original_df) | (self == self.last_update))
+                for (index, column), new_value in new_updates.stack().iteritems():
+                    self.db_client.db[id].update( 
+                        {'index':index, 'column':column, 'user_id': self.user_id},
+                        {'index':index, 'column':column, 'user_id': self.user_id, 'new_value':new_value},
+                        upsert=True )
+                    self.last_update.loc[index,column] = new_value
+                
                 time.sleep(1)
 
         threading.Thread(target=handle_changes).start()
