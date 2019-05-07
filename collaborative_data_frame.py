@@ -5,6 +5,9 @@ from pymongo import MongoClient
 from io import StringIO
 from bson.objectid import ObjectId
 from bson.timestamp import Timestamp
+
+import math
+
 import threading
 import time
 
@@ -15,7 +18,6 @@ from ipywidgets.widgets import Button, VBox, HBox
 class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
-        id = None
         db_client = MongoClient('mongodb://localhost:27017,localhost:27018,localhost:27019/{db}?replicaSet=my-mongo-set')
         if isinstance(data, pd.DataFrame):
             df = data
@@ -34,7 +36,6 @@ class CollaborativeDataFrame(pd.DataFrame):
         pd.DataFrame.__init__(self, df.copy())
         self.db_client = db_client
         self.url = url
-        self.id = id
         self.username = '' or kwargs.get('username', None)
         self.original_df = df
 
@@ -44,16 +45,18 @@ class CollaborativeDataFrame(pd.DataFrame):
         self.setup_widget()
 
     def monitor_changes(self):
+        id = self.url[-24:]
         def get_dataset_timestamp():
             # logicfrom https://github.com/nswbmw/objectid-to-timestamp
-            seconds = int(objectId[0:8], 16)
-            increament = math.floor(int(objectId[-6:], 16) / 16777.217)
-            return Timestamp(seconds, Timestamp)
+            seconds = int(id[0:8], 16)
+            increament = math.floor(int(id[-6:], 16) / 16777.217)
+            return Timestamp(seconds, increament)
 
         def handle_changes():
-            with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp) as stream:
+            with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
                 for change in stream:
                     # TODO Handle downloads 
+                    print('handling downloads ')
 
         def handle_uploads():
             while True:
