@@ -4,14 +4,19 @@ import qgrid.grid
 from pymongo import MongoClient
 from io import StringIO
 from bson.objectid import ObjectId
+from bson.timestamp import Timestamp
+import threading
+import time
 
 
 from ipywidgets.widgets import Button, VBox, HBox
 
 
 class CollaborativeDataFrame(pd.DataFrame):
-    def __init__(self, data):
-        url = None      
+    def __init__(self, data, *args, **kwargs):
+        url = None
+        id = None
+        db_client = MongoClient('mongodb://localhost:27017,localhost:27018,localhost:27019/{db}?replicaSet=my-mongo-set')
         if isinstance(data, pd.DataFrame):
             df = data
 
@@ -20,16 +25,43 @@ class CollaborativeDataFrame(pd.DataFrame):
             
             url = data
             id = url[-24:]
-            data = MongoClient().db.datasets.find_one({'_id':ObjectId(id)})['data']
+            data = db_client.db.datasets.find_one({'_id':ObjectId(id)})['data']
             df = pd.read_csv(StringIO(data), index_col=0)
             
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
         pd.DataFrame.__init__(self, df.copy())
+        self.db_client = db_client
         self.url = url
+        self.id = id
+        self.username = '' or kwargs.get('username', None)
         self.original_df = df
+
+        if self.url:
+            self.monitor_changes()
+
         self.setup_widget()
+
+    def monitor_changes(self):
+        def get_dataset_timestamp():
+            # logicfrom https://github.com/nswbmw/objectid-to-timestamp
+            seconds = int(objectId[0:8], 16)
+            increament = math.floor(int(objectId[-6:], 16) / 16777.217)
+            return Timestamp(seconds, Timestamp)
+
+        def handle_changes():
+            with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp) as stream:
+                for change in stream:
+                    # TODO Handle downloads 
+
+        def handle_uploads():
+            while True:
+                #TODO Handle uploads
+                time.sleep(1)
+
+        threading.Thread(target=handle_changes).start()
+        threading.Thread(target=handle_uploads).start()
 
     def commit(self, *args, **kwargs):
         print('will commit here') 
@@ -70,8 +102,9 @@ class CollaborativeDataFrame(pd.DataFrame):
 
     def share(self):
         if not self.url:
-            id = MongoClient().db.datasets.insert({'data': self.to_csv()})
+            id = self.db_client.db.datasets.insert({'data': self.to_csv()})
             self.url = f"http://0.0.0.0:3000/dataset/{id}"
+            self.monitor_changes()
         else:
             print('already shared!')
 
