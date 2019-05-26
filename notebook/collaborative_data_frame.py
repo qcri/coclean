@@ -11,6 +11,8 @@ import collections
 import threading
 import time
 
+from functools import reduce
+
 
 from ipywidgets.widgets import Button, VBox, HBox
 
@@ -18,7 +20,7 @@ from ipywidgets.widgets import Button, VBox, HBox
 class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
-        db_client = MongoClient('mongodb://localhost:27017,localhost:27018,localhost:27019/{db}?replicaSet=my-mongo-set')
+        db_client = MongoClient('mongodb://localhost:27017,localhost:27018,localhost:27019/db?replicaSet=my-mongo-set')
         if isinstance(data, pd.DataFrame):
             df = data
 
@@ -84,6 +86,17 @@ class CollaborativeDataFrame(pd.DataFrame):
 
     def list_my_updates(self):
         return self.mask(self == self.original_df).stack()
+
+    def resolve(self, policy):
+        resolved = self.copy()
+        counts = reduce(lambda df1, df2: df1 + df2, [df.notnull().astype('int') for df in  self.collaborators.values()])
+        to_resolve = counts.mask(counts<policy['at_least']).stack()
+        for (row,col), ـ in to_resolve.iteritems():
+            values = [df.loc[row,col] for df in self.collaborators.values()]
+            if policy['option'] == 'majority_vote':
+                resolved.loc[row, col] = max(set(values), key=values.count)
+        
+        return resolved
 
     def setup_widget(self):
         ### grid widget construction:
