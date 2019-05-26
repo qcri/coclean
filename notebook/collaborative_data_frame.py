@@ -94,6 +94,7 @@ class CollaborativeDataFrame(pd.DataFrame):
         for (row,col), ـ in to_resolve.iteritems():
             values = [df.loc[row,col] for df in self.collaborators.values()]
             if policy['option'] == 'majority_vote':
+                # TODO Handle Ties, Return to user to manually resolve.
                 resolved.loc[row, col] = max(set(values), key=values.count)
         
         return resolved
