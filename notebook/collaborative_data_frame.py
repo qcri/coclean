@@ -6,6 +6,9 @@ from io import StringIO
 from bson.objectid import ObjectId
 from bson.timestamp import Timestamp
 
+from validator_collection import checkers
+from urllib.parse import urlparse
+
 import math
 import collections
 import threading
@@ -13,22 +16,30 @@ import time
 
 from functools import reduce
 
-
 from ipywidgets.widgets import Button, VBox, HBox
 
 
 class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
-        db_client = MongoClient('mongodb://localhost:27017,localhost:27018,localhost:27019/db?replicaSet=my-mongo-set')
+        hostname = kwargs.get('hostname', '127.0.0.1')
+        db_client = None
+
         if isinstance(data, pd.DataFrame):
             df = data
+            db_client = MongoClient(f'mongodb://{hostname}:27017/db?replicaSet=rs0')
 
-        elif isinstance(data, str):
+        elif isinstance(data, str) and checkers.is_url(data, allow_special_ips=True):
             # TODO fetch the data from url. temprarily we are using mongodb
+            # TODO raise error if hostname from kwargs doesn't match the hostname in the url 
+            # TODO validate the id, handle the case if the id is invalid or no data found 
+
+            parsed = urlparse(data)
+            hostname = parsed.hostname
             
             url = data
             id = url[-24:]
+            db_client = MongoClient(f'mongodb://{hostname}:27017/db?replicaSet=rs0')
             data = db_client.db.datasets.find_one({'_id':ObjectId(id)})['data']
             df = pd.read_csv(StringIO(data), index_col=0)
             
@@ -36,9 +47,10 @@ class CollaborativeDataFrame(pd.DataFrame):
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
         pd.DataFrame.__init__(self, df.copy())
+        self.hostname = hostname
         self.db_client = db_client
         self.url = url
-        self.user_id = '' or kwargs.get('user_id', None)
+        self.user_id = kwargs.get('user_id', '')
         self.original_df = df
         self.collaborators = collections.defaultdict(lambda: pd.DataFrame().reindex_like(df))
 
@@ -130,7 +142,7 @@ class CollaborativeDataFrame(pd.DataFrame):
     def share(self):
         if not self.url:
             id = self.db_client.db.datasets.insert({'data': self.to_csv()})
-            self.url = f"http://0.0.0.0:3000/dataset/{id}"
+            self.url = f"http://{self.hostname}/dataset/{id}"
             self.monitor_changes()
         else:
             print('already shared!')
