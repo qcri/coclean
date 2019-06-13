@@ -30,7 +30,7 @@ Now all you need is to import the file `collaborative_data_frame.py` in your not
 
 
 
-Example notebooks: 
+## Example notebooks: 
 ```
 cd collaborativedatascience/notebook/examples
 pip install -r requirements.txt
@@ -38,7 +38,7 @@ jupyter notebook
 ```
 
 
-Basic usage:
+## Basic usage:
 
 ```python
 import collaborative_data_frame as cdf
