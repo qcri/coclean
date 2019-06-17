@@ -1,3 +1,6 @@
+jupyter
 qgrid
-pymongo
+pymongo>=3.7.1
 validator_collection
+pandas
+matplotlib
