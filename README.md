@@ -9,17 +9,18 @@ This framework allows data scientists to share and collaborate on their datasets
 # Getting Started with the Jupyter Notebook Interface
 First, Make sure you have [Docker](https://www.docker.com/) and [Jupyter Notebooks](https://jupyter.org/)
 
-Next clone the repo and navigate to server directory.
+Next clone and navigate to the repo directory and install requirements:
 
 ```
 git clone https://github.com/qcri/collaborativedatascience.git
-cd collaborativedatascience/server
+cd collaborativedatascience
 pip install -r requirements.txt
 ```
 
-Start the backend 
+Start the backend:
 
 ```
+cd server
 docker-compose up
 ```
 
@@ -33,7 +34,6 @@ Now all you need is to import the file `collaborative_data_frame.py` in your not
 ## Example notebooks: 
 ```
 cd collaborativedatascience/notebook/examples
-pip install -r requirements.txt
 jupyter notebook
 ```
 
