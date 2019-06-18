@@ -27,7 +27,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
         if isinstance(data, pd.DataFrame):
             df = data
-            db_client = MongoClient(f'mongodb://{hostname}:27017/db?replicaSet=rs0')
+            db_client = MongoClient(f'mongodb://{hostname}:27017/db')
 
         elif isinstance(data, str) and checkers.is_url(data, allow_special_ips=True):
             # TODO fetch the data from url. temprarily we are using mongodb
@@ -39,7 +39,7 @@ class CollaborativeDataFrame(pd.DataFrame):
             
             url = data
             id = url[-24:]
-            db_client = MongoClient(f'mongodb://{hostname}:27017/db?replicaSet=rs0')
+            db_client = MongoClient(f'mongodb://{hostname}:27017/db')
             data = db_client.db.datasets.find_one({'_id':ObjectId(id)})['data']
             df = pd.read_csv(StringIO(data), index_col=0)
             
