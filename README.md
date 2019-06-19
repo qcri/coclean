@@ -13,7 +13,7 @@ This framework comes with a jupyter notebook extension that allows you to visual
 
 
 
-### **Starting the Backend Server**
+### **Step 1: Starting the Backend Server**
 First, Make sure you have [Docker](https://www.docker.com/) installed on the server machine. 
 
 Next clone the repo and navigate to server directory and run it using docker-compose:
@@ -25,7 +25,7 @@ docker-compose up --detach
 ```
 
 
-### **Use Jupyter Notebooks on Your Local Machine**
+### **Step 2: Use Jupyter Notebooks on Your Local Machine**
 Make sure you have [Jupyter Notebooks](https://jupyter.org/) installed on your local mahcine. Clone the repo and install the requirments:
 
 ```
@@ -58,6 +58,10 @@ import pandas as pd
 
 df = pd.read_csv('pima-indians-diabetes.csv')
 df = cdf.CollaborativeDataFrame(df)
+
+# use hostname to point to the server from step 1, default is localhost
+# df = cdf.CollaborativeDataFrame(df, hostname='10.4.4.20')
+
 df.share()
 ```
 Output:
@@ -72,6 +76,3 @@ df.loc[0,'Age'] #updating some values like any dataframe
 df.list_my_updates()
 df.commit()
 ```
-
-
-
