@@ -42,6 +42,7 @@ jupyter nbextension enable --py --sys-prefix widgetsnbextension
 
 Start Jupyter Notebook: 
 ```
+cd notebook
 jupyter notebook
 ```
 
@@ -56,7 +57,7 @@ Example notebooks are located in the directory `collaborativedatascience/noteboo
 import collaborative_data_frame as cdf
 import pandas as pd
 
-df = pd.read_csv('pima-indians-diabetes.csv')
+df = pd.read_csv('examples/pima-indians-diabetes.csv')
 df = cdf.CollaborativeDataFrame(df)
 
 # use hostname to point to the server from step 1, default is localhost
