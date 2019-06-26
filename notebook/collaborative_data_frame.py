@@ -23,10 +23,16 @@ class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
         hostname = kwargs.get('hostname', '127.0.0.1')
+        metadata = kwargs.get('metadata', None)
         db_client = None
 
         if isinstance(data, pd.DataFrame):
-            df = data
+            if metadata:
+                rows = set([row for row,col in metadata.get('Cell_errors', []) ])
+                df = data.iloc[list(rows)]
+            else:
+                df = data
+
             db_client = MongoClient(f'mongodb://{hostname}:27017/db')
 
         elif isinstance(data, str) and checkers.is_url(data, allow_special_ips=True):
@@ -48,6 +54,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
         pd.DataFrame.__init__(self, df.copy())
         self.hostname = hostname
+        self.metadata = metadata
         self.db_client = db_client
         self.url = url
         self.user_id = kwargs.get('user_id', '')
