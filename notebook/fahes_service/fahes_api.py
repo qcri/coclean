@@ -2,7 +2,7 @@ import os
 import sys
 from subprocess import Popen
 import json
-from os import listdir
+from os import listdir, path
 import ctypes
 from ctypes import c_char_p
 import pandas as pd
@@ -12,7 +12,7 @@ import numpy as np
 from pandas.api.types import is_string_dtype
 
 global tool_loc
-tool_loc = "./fahes/"
+tool_loc = path.join(path.dirname(__file__), "fahes")
 
 
 
@@ -194,8 +194,8 @@ def callFahes_w_tab_name(tab_full_name, output_dir):
     dmvs_json['Cell_errors'] = []
 
     if len(df) > 0: 
-        print (df.columns)
-        print('======================')
+        # print (df.columns)
+        # print('======================')
 
         f_tab_name = c_char_p(tab_full_name.encode('utf-8'))
         out_dir = c_char_p(output_dir.encode('utf-8'))
@@ -215,7 +215,7 @@ def callFahes_w_tab_name(tab_full_name, output_dir):
                     for i in att.index:
                         if att[i] == dmv[1]:
                             dmvs_json['Cell_errors'].append((att_idx, i))
-                print('======================')
+                # print('======================')
                 with open('DMV_' + tab_name + '.json', 'w') as fp:
                     json.dump(dmvs_json, fp)
                 # for dmv in DMVs:
