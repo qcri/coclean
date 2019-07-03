@@ -28,7 +28,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
         if isinstance(data, pd.DataFrame):
             if metadata:
-                rows = set([row for row,col in metadata.get('Cell_errors', []) ])
+                rows = set([row for tool,output in metadata.items() for row,col in output.get('Cell_errors', []) ])
                 df = data.iloc[list(rows)]
             else:
                 df = data
@@ -46,7 +46,8 @@ class CollaborativeDataFrame(pd.DataFrame):
             url = data
             id = url[-24:]
             db_client = MongoClient(f'mongodb://{hostname}:27017/db')
-            data = db_client.db.datasets.find_one({'_id':ObjectId(id)})['data']
+            document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
+            data, metadata = [document[key] for key in ['data', 'metadata']]
             df = pd.read_csv(StringIO(data), index_col=0)
             
         else:
@@ -148,7 +149,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
     def share(self):
         if not self.url:
-            id = self.db_client.db.datasets.insert({'data': self.to_csv()})
+            id = self.db_client.db.datasets.insert({'data': self.to_csv(), 'metadata': self.metadata})
             self.url = f"http://{self.hostname}/dataset/{id}"
             self.monitor_changes()
         else:

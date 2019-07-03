@@ -216,6 +216,7 @@ def callFahes_w_tab_name(tab_full_name, output_dir):
                         if att[i] == dmv[1]:
                             dmvs_json['Cell_errors'].append((i, att_idx))
                 # print('======================')
+                dmvs_json = {"Fahes":dmvs_json}
                 with open('DMV_' + tab_name + '.json', 'w') as fp:
                     json.dump(dmvs_json, fp)
                 # for dmv in DMVs:
