@@ -60,12 +60,13 @@ class CollaborativeDataFrame(pd.DataFrame):
         self.url = url
         self.user_id = kwargs.get('user_id', '')
         self.original_df = df
-        self.collaborators = collections.defaultdict(lambda: pd.DataFrame().reindex_like(df))
+        self.collaborators = collections.defaultdict(lambda: collections.defaultdict (lambda: pd.DataFrame().reindex_like(df)))
+        self.label = pd.DataFrame().reindex_like(df)
+
+        self.setup_widget()
 
         if self.url:
             self.monitor_changes()
-
-        self.setup_widget()
 
     def monitor_changes(self):
         id = self.url[-24:]
@@ -79,19 +80,22 @@ class CollaborativeDataFrame(pd.DataFrame):
             with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
                 for change in stream:
                     document = change['fullDocument']
-                    user_id, index, column, new_value = [document[key] for key in ['user_id', 'index', 'column', 'new_value']]
-                    self.collaborators[user_id].loc[index, column] = new_value
+                    user_id, index, column, type, new_value = [document[key] for key in ['user_id', 'index', 'column', 'type', 'new_value']]
+                    self.collaborators[user_id][type].loc[index, column] = new_value
 
         def handle_uploads():
-            self.last_update = pd.DataFrame().reindex_like(self.original_df)
+            types = ['update', 'label']
+            last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.original_df))
+            get_dfs = lambda t: (self, self.original_df) if t=='update' else (self.label, pd.DataFrame().reindex_like(self.original_df))
             while True:
-                new_updates = self.mask((self == self.original_df) | (self == self.last_update))
-                for (index, column), new_value in new_updates.stack().iteritems():
-                    self.db_client.db[id].update( 
-                        {'index':index, 'column':column, 'user_id': self.user_id},
-                        {'index':index, 'column':column, 'user_id': self.user_id, 'new_value':new_value},
-                        upsert=True )
-                    self.last_update.loc[index,column] = new_value
+                for t in types: 
+                    current, original = get_dfs(t)
+                    new_updates = current.mask((current == original) | (current == last_upload[t]))
+                    for (index, column), new_value in new_updates.stack().iteritems():
+                        self.db_client.db[id].update( 
+                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': t},
+                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': t, 'new_value':new_value}, upsert=True )
+                        last_upload[t].loc[index,column] = new_value
                 
                 time.sleep(1)
 
