@@ -124,7 +124,35 @@ class CollaborativeDataFrame(pd.DataFrame):
 
     def setup_widget(self):
         ### grid widget construction:
-        grid_widget = qgrid.show_grid(self)
+        def items_callback (index, column):
+            items = {"label_False" : 'Label as False'}
+            for action, text in zip(['label', 'update'], ['Labeld By', 'Updated By']):
+                for name, data in self.collaborators.items():
+                    df = data[action]
+                    val = df.loc[index,column]
+
+                    if name == self.user_id or pd.isna(val):
+                        continue
+
+                    key = f"{action}_{val}_{name}" 
+                    items[key]= f"{val} : {text} {name}" 
+
+            return items
+
+        def click_callback(index, column, key):
+            action, val = key.split('_')[0:2]
+            
+            if action == 'update':
+                self.grid_widget.edit_cell(index,column, val)
+            elif action == 'label':
+                self.label.loc[index,column] = val
+            
+
+        context_menu = {
+                    'items_callback' : items_callback,
+                    'click_callback' : click_callback
+                }
+        grid_widget = qgrid.show_grid(self, context_menu = context_menu)
         def handle_cell_edited(event, grid_widget):
             index, column, new_value = event['index'], event['column'], event['new']
             self.loc[index, column] = new_value 
