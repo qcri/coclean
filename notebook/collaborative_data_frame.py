@@ -76,12 +76,16 @@ class CollaborativeDataFrame(pd.DataFrame):
             increament = math.floor(int(id[-6:], 16) / 16777.217)
             return Timestamp(seconds, increament)
 
+        highligted_cells = collections.defaultdict(dict)
         def handle_changes():
             with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
                 for change in stream:
                     document = change['fullDocument']
                     user_id, index, column, type, new_value = [document[key] for key in ['user_id', 'index', 'column', 'type', 'new_value']]
                     self.collaborators[user_id][type].loc[index, column] = new_value
+                    if user_id != self.user_id:
+                        highligted_cells[index][column] = 'highlight'
+                    self.grid_widget.set_cell_css_styles('.highlight {background-color: red}', highligted_cells)
 
         def handle_uploads():
             last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.original_df))
