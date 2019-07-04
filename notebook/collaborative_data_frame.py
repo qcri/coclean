@@ -77,6 +77,13 @@ class CollaborativeDataFrame(pd.DataFrame):
             return Timestamp(seconds, increament)
 
         highligted_cells = collections.defaultdict(dict)
+        styles = """
+        .tool_highlight {background-color: yellow}
+        .highlight {background-color: red}; 
+        """
+        for tool,output in self.metadata.items():
+            for row,col in output.get('Cell_errors', []):
+                highligted_cells[self.index.get_loc(row)][self.columns[col]] = 'tool_highlight'
         def handle_changes():
             with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
                 for change in stream:
@@ -85,7 +92,7 @@ class CollaborativeDataFrame(pd.DataFrame):
                     self.collaborators[user_id][type].loc[index, column] = new_value
                     if user_id != self.user_id:
                         highligted_cells[index][column] = 'highlight'
-                    self.grid_widget.set_cell_css_styles('.highlight {background-color: red}', highligted_cells)
+                    self.grid_widget.set_cell_css_styles(styles, highligted_cells)
 
         def handle_uploads():
             last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.original_df))
@@ -129,7 +136,13 @@ class CollaborativeDataFrame(pd.DataFrame):
     def setup_widget(self):
         ### grid widget construction:
         def items_callback (index, column):
-            items = {"label_False" : 'Label as False'}
+            items = {}
+            for tool,output in self.metadata.items():
+                for row,col in output.get('Cell_errors', []):
+                    if row == index and self.columns[col] ==  column:
+                        items [f"info_{tool}"] = f"False : Detected By {tool}" 
+
+            items ["label_False"] = 'Label as False'
             for action, text in zip(['label', 'update'], ['Labeld By', 'Updated By']):
                 for name, data in self.collaborators.items():
                     df = data[action]
