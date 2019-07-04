@@ -84,18 +84,17 @@ class CollaborativeDataFrame(pd.DataFrame):
                     self.collaborators[user_id][type].loc[index, column] = new_value
 
         def handle_uploads():
-            types = ['update', 'label']
             last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.original_df))
-            get_dfs = lambda t: (self, self.original_df) if t=='update' else (self.label, pd.DataFrame().reindex_like(self.original_df))
+            get_dfs = lambda action: (self, self.original_df) if action=='update' else (self.label, pd.DataFrame().reindex_like(self.original_df))
             while True:
-                for t in types: 
-                    current, original = get_dfs(t)
-                    new_updates = current.mask((current == original) | (current == last_upload[t]))
+                for action in ['update', 'label']: 
+                    current, original = get_dfs(action)
+                    new_updates = current.mask((current == original) | (current == last_upload[action]))
                     for (index, column), new_value in new_updates.stack().iteritems():
                         self.db_client.db[id].update( 
-                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': t},
-                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': t, 'new_value':new_value}, upsert=True )
-                        last_upload[t].loc[index,column] = new_value
+                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': action},
+                            {'index':index, 'column':column, 'user_id': self.user_id, 'type': action, 'new_value':new_value}, upsert=True )
+                        last_upload[action].loc[index,column] = new_value
                 
                 time.sleep(1)
 
