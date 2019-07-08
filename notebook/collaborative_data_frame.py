@@ -27,11 +27,12 @@ class CollaborativeDataFrame(pd.DataFrame):
         db_client = None
 
         if isinstance(data, pd.DataFrame):
+            original_df = data
             if metadata:
                 rows = set([row for tool,output in metadata.items() for row,col in output.get('Cell_errors', []) ])
-                df = data.iloc[list(rows)]
+                shared_df = data.iloc[list(rows)]
             else:
-                df = data
+                shared_df = data
 
             db_client = MongoClient(f'mongodb://{hostname}:27017/db')
 
@@ -48,20 +49,21 @@ class CollaborativeDataFrame(pd.DataFrame):
             db_client = MongoClient(f'mongodb://{hostname}:27017/db')
             document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
             data, metadata = [document[key] for key in ['data', 'metadata']]
-            df = pd.read_csv(StringIO(data), index_col=0)
+            shared_df = pd.read_csv(StringIO(data), index_col=0)
             
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
-        pd.DataFrame.__init__(self, df.copy())
+        pd.DataFrame.__init__(self, shared_df.copy())
         self.hostname = hostname
         self.metadata = metadata
         self.db_client = db_client
         self.url = url
         self.user_id = kwargs.get('user_id', '')
-        self.original_df = df
-        self.collaborators = collections.defaultdict(lambda: collections.defaultdict (lambda: pd.DataFrame().reindex_like(df)))
-        self.label = pd.DataFrame().reindex_like(df)
+        self.shared_df = shared_df
+        self.original_df = original_df
+        self.collaborators = collections.defaultdict(lambda: collections.defaultdict (lambda: pd.DataFrame().reindex_like(shared_df)))
+        self.label = pd.DataFrame().reindex_like(shared_df)
 
         self.setup_widget()
 
@@ -95,8 +97,8 @@ class CollaborativeDataFrame(pd.DataFrame):
                     self.grid_widget.set_cell_css_styles(styles, highligted_cells)
 
         def handle_uploads():
-            last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.original_df))
-            get_dfs = lambda action: (self, self.original_df) if action=='update' else (self.label, pd.DataFrame().reindex_like(self.original_df))
+            last_upload = collections.defaultdict(lambda: pd.DataFrame().reindex_like(self.shared_df))
+            get_dfs = lambda action: (self, self.shared_df) if action=='update' else (self.label, pd.DataFrame().reindex_like(self.shared_df))
             while True:
                 for action in ['update', 'label']: 
                     current, original = get_dfs(action)
@@ -119,7 +121,7 @@ class CollaborativeDataFrame(pd.DataFrame):
         self.grid_widget.df = self
 
     def list_my_updates(self):
-        return self.mask(self == self.original_df).stack()
+        return self.mask(self == self.shared_df).stack()
 
     def resolve(self, policy):
         resolved = self.copy()
