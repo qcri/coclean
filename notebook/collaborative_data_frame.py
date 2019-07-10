@@ -5,6 +5,7 @@ from pymongo import MongoClient
 from io import StringIO
 from bson.objectid import ObjectId
 from bson.timestamp import Timestamp
+import json
 
 from validator_collection import checkers
 from urllib.parse import urlparse
@@ -124,16 +125,25 @@ class CollaborativeDataFrame(pd.DataFrame):
         return self.mask(self == self.shared_df).stack()
 
     def resolve(self, policy):
-        resolved = self.copy()
-        counts = reduce(lambda df1, df2: df1 + df2, [df.notnull().astype('int') for df in  self.collaborators.values()])
-        to_resolve = counts.mask(counts<policy['at_least']).stack()
-        for (row,col), ـ in to_resolve.iteritems():
-            values = [df.loc[row,col] for df in self.collaborators.values()]
-            if policy['option'] == 'majority_vote':
-                # TODO Handle Ties, Return to user to manually resolve.
-                resolved.loc[row, col] = max(set(values), key=values.count)
+        resolved_label = pd.DataFrame().reindex_like(self.shared_df)
+        resolved_update = pd.DataFrame().reindex_like(self.shared_df)
+        metadata = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
+        for action, resolved in zip (['label', 'update'], [resolved_label, resolved_update]):
+            counts = reduce(lambda df1, df2: df1 + df2, [dfs[action].notnull().astype('int') for dfs in self.collaborators.values()])
+            to_resolve = counts.mask(counts<policy['at_least']).stack()
+            for (row,col), ـ in to_resolve.iteritems():
+                values = [dfs[action].loc[row,col] for dfs in self.collaborators.values()]
+                if policy['option'] == 'majority_vote':
+                    # TODO Handle Ties, Return to user to manually resolve.
+                    val = max(set(values), key=values.count)
+                    resolved.loc[row, col] = val
+                    metadata[action][row][col] = val 
         
-        return resolved
+        df = self.original_df.copy()
+        for (row,col), val in resolved_update.stack().iteritems():
+            df.loc[row, col] = val
+
+        return df, metadata
 
     def setup_widget(self):
         ### grid widget construction:
