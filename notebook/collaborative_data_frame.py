@@ -51,6 +51,7 @@ class CollaborativeDataFrame(pd.DataFrame):
             document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
             data, metadata = [document[key] for key in ['data', 'metadata']]
             shared_df = pd.read_csv(StringIO(data), index_col=0)
+            original_df = shared_df.copy()
             
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')

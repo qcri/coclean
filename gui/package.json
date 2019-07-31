@@ -11,6 +11,7 @@
     "@babel/runtime": "^7.4.2",
     "@handsontable/react": "^3.0.0",
     "core-js": "^2.6.5",
+    "csv-string": "^3.1.6",
     "handsontable": "^7.0.0",
     "meteor-node-stubs": "^0.4.1",
     "react": "^16.8.6",

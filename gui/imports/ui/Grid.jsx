@@ -7,6 +7,7 @@ import { Meteor } from 'meteor/meteor';
 import Handsontable from 'handsontable';
 import { _ } from 'meteor/underscore'
 import 'handsontable/dist/handsontable.full.css';
+import * as CSV from 'csv-string';
 
 class Grid extends React.Component {
   constructor(props) {
@@ -15,10 +16,10 @@ class Grid extends React.Component {
     window._ = _
   }
   render() {
-    var dataColne = JSON.parse(JSON.stringify(this.props.originalData));
+    var data = JSON.parse(JSON.stringify(this.props.originalData));
     this.props.myUpdates.map((cell) => {
         const i = cell.i,  j = cell.j, value = cell.value 
-        dataColne[i][j] = value
+        data[i][j] = value
     }); 
 
     const getValuesByOthers = ((i,j) => {
@@ -26,9 +27,9 @@ class Grid extends React.Component {
         return (vals[i] && vals[i][j]) || []
     })
 
-    const isFlagged = ((i,j) => {
-        flagged = this.props.flagged
-        return (flagged[i] && flagged[i][j]) || false
+    const isLabeled = ((i,j) => {
+        labels = this.props.labels
+        return (labels[i] && labels[i][j]) || false
     })
 
     const getContextMenueItems = ( () => {
@@ -37,7 +38,7 @@ class Grid extends React.Component {
                 name:'Flag as dirty',
                 callback: ((key, selection, clickEvent) => { 
                     const i = selection[0].end.row, j = selection[0].end.col
-                    if(!isFlagged(i,j))
+                    if(!isLabeled(i,j))
                         Flag.insert({i,j, datasetId:this.props.datasetId})
                 })
             },
@@ -72,9 +73,9 @@ class Grid extends React.Component {
             <h3>Share this dataset with other collaborators: </h3>
             <span> {document.URL}</span>
             <HotTable ref={this.refToHotIns} root={this.refToHotIns} settings={{
-                data:dataColne,
+                data:data,
                 colHeaders:this.props.header,
-                rowHeaders:true,
+                rowHeaders:this.props.index,
                 width:"1400",
                 height:"500",
                 manualRowResize: true,
@@ -86,6 +87,7 @@ class Grid extends React.Component {
                 allowRemoveRow: false,
                 allowRemoveColumn: false,
                 licenseKey:'non-commercial-and-evaluation',
+                bindRowsWithHeaders: 'strict',
                 contextMenu: {
                     items:getContextMenueItems()
                 },
@@ -95,7 +97,7 @@ class Grid extends React.Component {
                     if (getValuesByOthers(row,col).length) {
                         td.style.background = 'red';
                     }
-                    if (isFlagged(row,col)) {
+                    if (isLabeled(row,col)) {
                         td.style.background = 'yellow';
                     }
                     return td;
@@ -118,29 +120,28 @@ class Grid extends React.Component {
 
 export default withTracker(props =>  {
     datasetId = props.match.params.datasetId
+    // TODO: Need to check the existance of the dataset id
+    dataset = Dataset.find(new Meteor.Collection.ObjectID(datasetId)).fetch()[0]
+    originalData = CSV.parse(dataset.data);
+    metadata = dataset.metadata
 
-    originalData = []
-    Dataset.find({
-        datasetId,
-        original:true
-    }).fetch().map((cell) => {
-        const i = cell.i,  j = cell.j, value = cell.value 
-        originalData[i] = originalData[i] || []
-        originalData[i][j] = value
-    })
-    header = originalData[-1]
+    Meteor.subscribe('dataset', datasetId);
+    ds = Dataset.getDataset(datasetId)
+    log = ds.find({}).fetch();
+    header = originalData[0].slice(1)
+    index = originalData.slice(1).map(e => e[0])
+    originalData = originalData.slice(1).map(e => e.slice(1))
 
-    myUpdates = Dataset.find({
-        datasetId,
-        original:{$exists:false},
-        userId:Meteor.userId()}, { sort: { createdAt: 1 }
+    myUpdates = ds.find({
+        userId:Meteor.userId(),
+        type:'update'
+    }, { sort: { createdAt: 1 }
      }).fetch()
 
     othersUpdates = []
-    Dataset.find({
-        datasetId,
-        original:{$exists:false},
-        userId:{$ne:Meteor.userId()}
+    ds.find({
+        userId:{$ne:Meteor.userId()},
+        type:'update'
     }).fetch().map((cell) => {
         const i = cell.i,  j = cell.j, value = cell.value 
         this.othersUpdates[i] = this.othersUpdates[i] || []
@@ -150,21 +151,23 @@ export default withTracker(props =>  {
             this.othersUpdates[i][j].push(value)
     });
 
-    flagged = []
-    Flag.find({
-        datasetId,
+    labels = []
+    ds.find({
+        userId:{$ne:Meteor.userId()},
+        type:'label'
     }).fetch().map((cell) => {
         const i = cell.i,  j = cell.j
-        flagged[i] = flagged[i] || []
-        flagged[i][j] = true
+        labels[i] = labels[i] || []
+        labels[i][j] = true
     })
             
     return {
         datasetId,
         header,
+        index,
         originalData,
         myUpdates,
         othersUpdates,
-        flagged
+        labels
     }
 })(Grid);
