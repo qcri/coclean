@@ -15,6 +15,14 @@ class Grid extends React.Component {
     this.refToHotIns=React.createRef();
     window._ = _
   }
+
+  seq2index(instance, row,col){
+        return [
+            this.props.index[instance.toPhysicalRow(row)],
+            this.props.header[instance.toPhysicalColumn(col)],
+        ] 
+    }
+
   render() {
     var data = JSON.parse(JSON.stringify(this.props.originalData));
     this.props.myUpdates.map((cell) => {
@@ -22,15 +30,18 @@ class Grid extends React.Component {
         data[i][j] = value
     }); 
 
-    const getValuesByOthers = ((i,j) => {
+    const getValuesByOthers = ((index,column) => {
         const vals = this.props.othersUpdates
-        return (vals[i] && vals[i][j]) || []
+        return (vals[index] && vals[index][column]) || []
     })
 
     const isLabeled = ((i,j) => {
         labels = this.props.labels
         return (labels[i] && labels[i][j]) || false
     })
+
+    const seq2index = (...args) => this.seq2index(...args)
+
 
     const getContextMenueItems = ( () => {
         var items = {
@@ -53,13 +64,17 @@ class Grid extends React.Component {
             {
                 name: ((c) =>  {
                     return function (){
-                        const values = getValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        var index, column
+                        [index,column] = seq2index(this, this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        const values = getValuesByOthers(index, column)
                         return values[c] ; 
                     }
                 })(c),
                 hidden:  ((c) =>  {
                     return function (){
-                        const values = getValuesByOthers(this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        var index, column
+                        [index,column] = seq2index(this, this.getSelectedLast()[0], this.getSelectedLast()[1])
+                        const values = getValuesByOthers(index, column)
                         return values.length<=c ; 
                     }
                 })(c)
@@ -91,13 +106,15 @@ class Grid extends React.Component {
                 contextMenu: {
                     items:getContextMenueItems()
                 },
-                renderer: function(instance, td, row, col, prop, value, cellProperties) {
+                renderer: function (instance, td, row, col, prop, value, cellProperties) {
                     Handsontable.renderers.TextRenderer.apply(this, arguments);
+                    var index, column
+                    [index,column] = seq2index(instance, row, col)
                     // apply style, or better to have class name with external styles
-                    if (getValuesByOthers(row,col).length) {
+                    if (getValuesByOthers(index,column).length) {
                         td.style.background = 'red';
                     }
-                    if (isLabeled(row,col)) {
+                    if (isLabeled(index,column)) {
                         td.style.background = 'yellow';
                     }
                     return td;
@@ -143,12 +160,12 @@ export default withTracker(props =>  {
         userId:{$ne:Meteor.userId()},
         type:'update'
     }).fetch().map((cell) => {
-        const i = cell.i,  j = cell.j, value = cell.value 
-        this.othersUpdates[i] = this.othersUpdates[i] || []
-        this.othersUpdates[i][j] = this.othersUpdates[i][j] || []
+        const index = cell.index,  column = cell.column, value = cell.new_value 
+        this.othersUpdates[index] = this.othersUpdates[index] || []
+        this.othersUpdates[index][column] = this.othersUpdates[index][column] || []
     
-        if (!this.othersUpdates[i][j].includes(value))
-            this.othersUpdates[i][j].push(value)
+        if (!this.othersUpdates[index][column].includes(value))
+            this.othersUpdates[index][column].push(value)
     });
 
     labels = []
