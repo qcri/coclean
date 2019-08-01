@@ -18,9 +18,20 @@ const datasets = {}
 Dataset.getDataset = function (datasetId){
   // TODO: Need to check the existance of the dataset id
   if (! (datasetId in datasets)){
-    datasets[datasetId] = new Mongo.Collection(datasetId);
+    datasets[datasetId] = new Mongo.Collection(datasetId, {idGeneration:'MONGO'});
   }
   return datasets[datasetId]
 }
+
+Meteor.methods({
+  'dataset.update'({datasetId, index, column, type, new_value}){
+    Dataset.getDataset(datasetId).upsert(
+        {index, column, 'user_id': Meteor.user_id, type},
+        {$set: 
+            {index,column, 'user_id': Meteor.userId(), type, new_value}
+        }
+    )
+  }
+})
 
 export default Dataset 

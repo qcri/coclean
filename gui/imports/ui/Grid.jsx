@@ -2,7 +2,6 @@ import React from 'react';
 import { HotTable } from '@handsontable/react';
 import { withTracker } from 'meteor/react-meteor-data';
 import Dataset from '../api/dataset.js'
-import Flag from '../api/flag.js'
 import { Meteor } from 'meteor/meteor';
 import Handsontable from 'handsontable';
 import { _ } from 'meteor/underscore'
@@ -24,10 +23,14 @@ class Grid extends React.Component {
     }
 
   render() {
+    const seq2index = (...args) => this.seq2index(...args)
+
     var data = JSON.parse(JSON.stringify(this.props.originalData));
     this.props.myUpdates.map((cell) => {
-        const i = cell.i,  j = cell.j, value = cell.value 
-        data[i][j] = value
+        const index = cell.index,  column = cell.column, value = cell.new_value
+        var row = this.props.index.indexOf(index)
+        var col = this.props.header.indexOf(column) 
+        data[row][col] = value
     }); 
 
     const getValuesByOthers = ((index,column) => {
@@ -40,7 +43,6 @@ class Grid extends React.Component {
         return (labels[i] && labels[i][j]) || false
     })
 
-    const seq2index = (...args) => this.seq2index(...args)
 
 
     const getContextMenueItems = ( () => {
@@ -49,8 +51,18 @@ class Grid extends React.Component {
                 name:'Flag as dirty',
                 callback: ((key, selection, clickEvent) => { 
                     const i = selection[0].end.row, j = selection[0].end.col
-                    if(!isLabeled(i,j))
-                        Flag.insert({i,j, datasetId:this.props.datasetId})
+                    var index, column
+                    [index,column] = seq2index(this, i,j)
+                    if(!isLabeled(index, column))
+                        Meteor.call('dataset.update', {
+                            datasetId, index, column, type:'label', new_value: false
+                        }, (err, res) => {
+                            if (err) {
+                                alert(err);
+                            } else {
+                                //sucess
+                            }
+                            });
                 })
             },
             "sep1": {name: '---------'},
@@ -122,9 +134,20 @@ class Grid extends React.Component {
 
                 afterChange: (changes) => {
                     if(changes){
-                        changes.forEach(([row, prop, oldValue, newValue]) => {
-                            if (oldValue !== newValue)
-                                Dataset.insert({i:row, j:prop, value:newValue, datasetId:this.props.datasetId})
+                        changes.forEach(([row, col, old_value, new_value]) => {
+                            if (old_value !== new_value){
+                                var index, column
+                                [index,column] = seq2index(this.refToHotIns.current.hotInstance, row, col)
+                                Meteor.call('dataset.update', {
+                                    datasetId, index, column, type:'update', new_value
+                                  }, (err, res) => {
+                                    if (err) {
+                                      alert(err);
+                                    } else {
+                                      //sucess
+                                    }
+                                  });
+                            }
                         });
                     }
                 }
@@ -150,14 +173,14 @@ export default withTracker(props =>  {
     originalData = originalData.slice(1).map(e => e.slice(1))
 
     myUpdates = ds.find({
-        userId:Meteor.userId(),
+        user_id:Meteor.userId(),
         type:'update'
     }, { sort: { createdAt: 1 }
      }).fetch()
 
     othersUpdates = []
     ds.find({
-        userId:{$ne:Meteor.userId()},
+        user_id:{$ne:Meteor.userId()},
         type:'update'
     }).fetch().map((cell) => {
         const index = cell.index,  column = cell.column, value = cell.new_value 
@@ -170,7 +193,7 @@ export default withTracker(props =>  {
 
     labels = []
     ds.find({
-        userId:{$ne:Meteor.userId()},
+        user_id:{$ne:Meteor.userId()},
         type:'label'
     }).fetch().map((cell) => {
         const i = cell.i,  j = cell.j
