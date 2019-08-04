@@ -1,0 +1,16 @@
+FROM node
+
+RUN curl -SL https://install.meteor.com/ -o /tmp/meteor/inst --create-dirs \
+    && chmod +x /tmp/meteor/inst \
+    && /tmp/meteor/inst \
+    && rm -rf /tmp/meteor
+
+
+ENV METEOR_ALLOW_SUPERUSER=1
+RUN ["meteor", "update"]
+
+COPY . /app
+WORKDIR /app
+RUN ["meteor", "npm", "install", "--production", "--unsafe-perm"];
+# RUN ["meteor", "build", "--directory"]
+CMD [ "meteor", "--production" ]

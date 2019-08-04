@@ -1,0 +1,17 @@
+version: '3'
+services:
+  db:
+    build: ./db/mongo-replicaset-mode
+    volumes:
+      - db:/data/db
+    ports: 
+      - 27017:27017
+  gui:
+    build: ./gui
+    environment:
+      - MONGO_URL=mongodb://db:27017/db
+    ports:
+      - 3000:3000
+
+volumes:
+  db:
