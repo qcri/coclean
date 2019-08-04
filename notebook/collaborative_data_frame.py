@@ -89,7 +89,7 @@ class CollaborativeDataFrame(pd.DataFrame):
             for row,col in output.get('Cell_errors', []):
                 highligted_cells[self.index.get_loc(row)][self.columns[col]] = 'tool_highlight'
         def handle_changes():
-            with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp()) as stream:
+            with self.db_client.db[id].watch(start_at_operation_time=get_dataset_timestamp(), full_document="updateLookup") as stream:
                 for change in stream:
                     document = change['fullDocument']
                     user_id, index, column, type, new_value = [document[key] for key in ['user_id', 'index', 'column', 'type', 'new_value']]

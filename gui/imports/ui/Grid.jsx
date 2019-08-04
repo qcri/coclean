@@ -169,7 +169,7 @@ export default withTracker(props =>  {
     ds = Dataset.getDataset(datasetId)
     log = ds.find({}).fetch();
     header = originalData[0].slice(1)
-    index = originalData.slice(1).map(e => e[0])
+    index = originalData.slice(1).map(e => Number(e[0]))
     originalData = originalData.slice(1).map(e => e.slice(1))
 
     myUpdates = ds.find({
