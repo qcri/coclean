@@ -14,6 +14,7 @@ import math
 import collections
 import threading
 import time
+import os
 
 from functools import reduce
 
@@ -23,7 +24,7 @@ from ipywidgets.widgets import Button, VBox, HBox
 class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
-        hostname = kwargs.get('hostname', '127.0.0.1')
+        hostname = kwargs.get('hostname', os.environ.get('DB', '127.0.0.1'))
         metadata = kwargs.get('metadata', None)
         db_client = None
 

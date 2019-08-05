@@ -12,6 +12,12 @@ services:
       - MONGO_URL=mongodb://db:27017/db
     ports:
       - 3000:3000
+  notebook:
+    build: ./notebook
+    environment:
+      - DB=db
+    ports:
+      - 8888:8888
 
 volumes:
   db:

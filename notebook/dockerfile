@@ -1,0 +1,26 @@
+FROM jupyter/datascience-notebook
+
+COPY ./ /home/jovyan/work 
+COPY ./requirements.txt /home/jovyan/work/requirements.txt
+WORKDIR /home/jovyan
+RUN git clone https://github.com/meshalawy/qgrid.git 
+WORKDIR /home/jovyan/qgrid
+RUN pip install -e .
+RUN cd js && npm install .
+RUN jupyter nbextension install --py --symlink --sys-prefix qgrid && jupyter nbextension enable --py --sys-prefix qgrid
+
+
+
+USER root
+RUN apt-get update --fix-missing
+RUN apt-get install --fix-missing
+RUN apt-get -y install build-essential
+
+RUN make clean -C /home/jovyan/work/fahes_service/fahes && make -C /home/jovyan/work/fahes_service/fahes
+RUN chown -R 1000 /home/jovyan/work/*
+
+USER jovyan
+
+
+RUN pip install -r /home/jovyan/work/requirements.txt
+WORKDIR /home/jovyan/work
