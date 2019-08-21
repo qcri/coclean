@@ -34,26 +34,30 @@ class CollaborativeDataFrame(pd.DataFrame):
                 rows = set([row for tool,output in metadata.items() for row,col in output.get('Cell_errors', []) ])
                 shared_df = data.iloc[list(rows)]
             else:
+                metadata = {}
                 shared_df = data
 
             db_client = MongoClient(f'mongodb://{hostname}:27017/db')
 
-        elif isinstance(data, str) and checkers.is_url(data, allow_special_ips=True):
+        elif isinstance(data, str): #and checkers.is_url(data, allow_special_ips=True):
             # TODO fetch the data from url. temprarily we are using mongodb
             # TODO raise error if hostname from kwargs doesn't match the hostname in the url 
             # TODO validate the id, handle the case if the id is invalid or no data found 
 
             parsed = urlparse(data)
-            hostname = parsed.hostname
-            
-            url = data
-            id = url[-24:]
-            db_client = MongoClient(f'mongodb://{hostname}:27017/db')
-            document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
-            data, metadata = [document[key] for key in ['data', 'metadata']]
-            shared_df = pd.read_csv(StringIO(data), index_col=0)
-            original_df = shared_df.copy()
-            
+            if parsed.scheme and parsed.netloc and parsed.path:
+                    
+                hostname = parsed.hostname
+                
+                url = data
+                id = url[-24:]
+                db_client = MongoClient(f'mongodb://{hostname}:27017/db')
+                document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
+                data, metadata = [document[key] for key in ['data', 'metadata']]
+                shared_df = pd.read_csv(StringIO(data), index_col=0)
+                original_df = shared_df.copy()
+            else:
+                raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
         else:
             raise ValueError('data must be either a DataFrame instance to be shared, or a string id of a previously shared DataFrame.')
 
