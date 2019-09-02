@@ -216,7 +216,7 @@ class CollaborativeDataFrame(pd.DataFrame):
     def share(self):
         if not self.url:
             id = self.db_client.db.datasets.insert({'data': self.to_csv(), 'metadata': self.metadata})
-            self.url = f"http://{self.hostname}/dataset/{id}"
+            self.url = f"http://{self.hostname}:3000/dataset/{id}"
             self.monitor_changes()
         else:
             print('already shared!')

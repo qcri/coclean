@@ -15,7 +15,7 @@ services:
   notebook:
     build: ./notebook
     environment:
-      - DB=db
+      - DB=${HOST}
     ports:
       - 8888:8888
 
