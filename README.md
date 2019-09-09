@@ -14,44 +14,43 @@ This framework comes with a jupyter notebook extension that allows you to visual
 
 
 ### **Step 1: Starting the Backend Server**
-First, Make sure you have [Docker](https://www.docker.com/) installed on the server machine. 
+First, Make sure you have [Docker](https://www.docker.com/) installed on the server machine. Then, Identify the IP address of this server and make sure the port 27017 is open
 
-Next clone the repo and navigate to server directory and run it using docker-compose:
+Next clone the repo and navigate to the directory and run it using docker-compose:
 
-```
+```bash 
 git clone https://github.com/qcri/collaborativedatascience.git
-cd collaborativedatascience/server
-docker-compose up --detach  
+cd collaborativedatascience/
+docker-compose up --detach db gui 
 ```
 
 
 ### **Step 2: Use Jupyter Notebooks on Your Local Machine**
-Make sure you have [Jupyter Notebooks](https://jupyter.org/) installed on your local mahcine. Clone the repo and install the requirments:
+For a quick start, you can use the Jupyter Notebook that is shipped with the framework. It has all the extensions installed and properly configured and you can run it via a single docker command. 
 
-```
+Execute the following commands to start Jupyter Notebook, make sure to replace `SERVER_IP` with your actual server ip from step 1.
+
+```bash
 git clone https://github.com/qcri/collaborativedatascience.git
 cd collaborativedatascience/
-pip install -r requirements.txt
+HOST=SERVER_IP docker-compose up notebook 
 ```
 
-Enable Extensions: 
-```
-jupyter nbextension enable --py --sys-prefix qgrid
-jupyter nbextension enable --py --sys-prefix widgetsnbextension
-```
+Now in your browser, navigate to `http://localhost:8888/` to access the notebooks. Follow the example notebooks for more information.
 
-Start Jupyter Notebook: 
-```
-cd notebook
-jupyter notebook
-```
+#### Notes:
+- Jupyter uses the port 8888 by default, so make sure that port is not used by existing Jupyter process, otherwise the previous command would fail.
+- The previous command will start a Jupyter Process in an isolated docker container. So, even if you run the server (step 1) on the same machine, they both will be isolated. Therefore, in that case, make sure not to use `localhsot` or `0.0.0.0` or `127.0.0.1` for `SERVER_IP` in the previous command and instead use the actual IP address of your machine.
+- If you would like to use the framework on your current installation of Jupyter in your machine, follow this installation guide [here](https://github.com/qcri/collaborativedatascience/wiki/Installation-on-Current-Jupyter-Notebook). 
 
-Now all you need is to import the file `collaborative_data_frame.py` in your notebooks. 
 
-Example notebooks are located in the directory `collaborativedatascience/notebook/examples`
+
+
 
 
 # Basic usage
+
+Example notebooks are located in the directory `collaborativedatascience/notebook/examples`
 
 ```python
 import collaborative_data_frame as cdf
@@ -60,7 +59,7 @@ import pandas as pd
 df = pd.read_csv('examples/pima-indians-diabetes.csv')
 df = cdf.CollaborativeDataFrame(df)
 
-# use hostname to point to the server from step 1, default is localhost
+# use hostname to point to the server from step 1, default is 127.0.0.1
 # df = cdf.CollaborativeDataFrame(df, hostname='10.4.4.20')
 
 df.share()
