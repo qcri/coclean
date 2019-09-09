@@ -159,18 +159,22 @@ class Grid extends React.Component {
 }
 
 export default withTracker(props =>  {
+    originalData = []
+    header = index = []
     datasetId = props.match.params.datasetId
     // TODO: Need to check the existance of the dataset id
     dataset = Dataset.find(new Meteor.Collection.ObjectID(datasetId)).fetch()[0]
-    originalData = CSV.parse(dataset.data);
-    metadata = dataset.metadata
-
     Meteor.subscribe('dataset', datasetId);
     ds = Dataset.getDataset(datasetId)
     log = ds.find({}).fetch();
-    header = originalData[0].slice(1)
-    index = originalData.slice(1).map(e => Number(e[0]))
-    originalData = originalData.slice(1).map(e => e.slice(1))
+    if (dataset && _.has(dataset, 'data')){
+        originalData = CSV.parse(dataset.data);
+        metadata = dataset.metadata
+    
+        header = originalData[0].slice(1)
+        index = originalData.slice(1).map(e => Number(e[0]))
+        originalData = originalData.slice(1).map(e => e.slice(1))
+    } 
 
     myUpdates = ds.find({
         user_id:Meteor.userId(),
