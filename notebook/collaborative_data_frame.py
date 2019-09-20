@@ -25,6 +25,8 @@ class CollaborativeDataFrame(pd.DataFrame):
     def __init__(self, data, *args, **kwargs):
         url = None
         hostname = kwargs.get('hostname', os.environ.get('HOST', '127.0.0.1'))
+        mongo_port = os.environ.get('MONGO_PORT', '27017')
+        gui_port = os.environ.get('GUI_PORT', 3000)
         metadata = kwargs.get('metadata', None)
         db_client = None
 
@@ -37,7 +39,7 @@ class CollaborativeDataFrame(pd.DataFrame):
                 metadata = {}
                 shared_df = data
 
-            db_client = MongoClient(f'mongodb://{hostname}:27017/db')
+            db_client = MongoClient(f'mongodb://{hostname}:{mongo_port}/db')
 
         elif isinstance(data, str): #and checkers.is_url(data, allow_special_ips=True):
             # TODO fetch the data from url. temprarily we are using mongodb
@@ -51,7 +53,7 @@ class CollaborativeDataFrame(pd.DataFrame):
                 
                 url = data
                 id = url[-24:]
-                db_client = MongoClient(f'mongodb://{hostname}:27017/db')
+                db_client = MongoClient(f'mongodb://{hostname}:{mongo_port}/db')
                 document = db_client.db.datasets.find_one({'_id':ObjectId(id)})
                 data, metadata = [document[key] for key in ['data', 'metadata']]
                 shared_df = pd.read_csv(StringIO(data), index_col=0)
@@ -63,6 +65,7 @@ class CollaborativeDataFrame(pd.DataFrame):
 
         pd.DataFrame.__init__(self, shared_df.copy())
         self.hostname = hostname
+        self.gui_port = gui_port
         self.metadata = metadata
         self.db_client = db_client
         self.url = url
@@ -216,7 +219,7 @@ class CollaborativeDataFrame(pd.DataFrame):
     def share(self):
         if not self.url:
             id = self.db_client.db.datasets.insert({'data': self.to_csv(), 'metadata': self.metadata})
-            self.url = f"http://{self.hostname}:3000/dataset/{id}"
+            self.url = f"http://{self.hostname}:{self.gui_port}/dataset/{id}"
             self.monitor_changes()
         else:
             print('already shared!')

@@ -5,19 +5,26 @@ services:
     volumes:
       - db:/data/db
     ports: 
-      - 27017:27017
+      # MONGO_PORT defaults to 27017 if not specified in the .env file
+      - ${MONGO_PORT:-27017}:27017   
   gui:
     build: ./gui
     environment:
+      # containers in docker compose can access each other directly. 
+      # So here we access the container directly on port 27017
       - MONGO_URL=mongodb://db:27017/db
     ports:
-      - 3000:3000
+      # GUI_PORT defaults to 3000 if not specified in the .env file
+      - ${GUI_PORT:-3000}:3000
   notebook:
     build: ./notebook
     environment:
       - HOST=${HOST}
+      - MONGO_PORT=${MONGO_PORT:-27017}
+      - GUI_PORT=${GUI_PORT:-3000}
     ports:
-      - 8888:8888
+      # JUPYTER_PORT defaults to 8888 if not specified in the .env file
+      - ${JUPYTER_PORT:-8888}:8888
 
 volumes:
   db:

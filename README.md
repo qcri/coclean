@@ -9,14 +9,24 @@ This framework allows data scientists to share and collaborate on their datasets
 # Getting Started with the Jupyter Notebook Interface
 Using this framework allows you to share a dataframe with other collaborators via a single command while working within your jupyter notebook, even if other users are at remote locations. Remote users will be able to access a copy of the dataframe and work with the data. The framework will keep track of all updates and allow you to retreive them back or even see other users' modification realtime. All of this not only via simple commands, but also without you leaving your notebook!
 
-This framework comes with a jupyter notebook extension that allows you to visually manage the shared dataframe. To use this framework in your jupyter notebook, a backend server needs to be running either on your local machine, or any other machine including the cloud services such as Azure, AWS, Google Cloud, etc, as long as that machine is accessiable by all collaborators and the port 27017 is open. 
+This framework comes with a jupyter notebook extension that allows you to visually manage the shared dataframe. To use this framework in your jupyter notebook, a backend server needs to be running either on your local machine, or any other machine including the cloud services such as Azure, AWS, Google Cloud, etc, as long as that machine is accessiable by all collaborators.
 
 
 
 ### **Step 1: Starting the Backend Server**
-First, Make sure you have [Docker](https://www.docker.com/) installed on the server machine. Then, Identify the IP address of this server and make sure the port 27017 is open
+First, Make sure you have [Docker](https://www.docker.com/) installed on the server machine. Then, Identify the IP address of this server. By default, we use ports 27017 and 3000 for MongoDB and GUI respectively, but you can configure them in the `.env` file. Make sure these ports are open in your server machine. 
 
-Next clone the repo and navigate to the directory and run it using docker-compose:
+**.env File:**
+
+```yaml
+MONGO_PORT=27017
+GUI_PORT=3000
+HOST=192.168.1.2
+...
+```
+
+
+Clone the repository and navigate to the directory, modify the `.env` file as needed and then run the backend server using docker-compose:
 
 ```bash 
 git clone https://github.com/qcri/collaborativedatascience.git
@@ -28,19 +38,22 @@ docker-compose up --detach db gui
 ### **Step 2: Use Jupyter Notebooks on Your Local Machine**
 For a quick start, you can use the Jupyter Notebook that is shipped with the framework. It has all the extensions installed and properly configured and you can run it via a single docker command. 
 
-Execute the following commands to start Jupyter Notebook, make sure to replace `SERVER_IP` with your actual server ip from step 1.
+We use the port `8888` for Jupyter which is the default, but you can configure  `JUPYTER_PORT` in the `.env` file. Also Make sure you have updated the `HOST` in the `.env` file with your actual server ip from step 1 as described above.
 
 ```bash
-git clone https://github.com/qcri/collaborativedatascience.git
+# Skip this step if you have already cloned the repository
+git clone https://github.com/qcri/collaborativedatascience.git 
+
 cd collaborativedatascience/
-HOST=SERVER_IP docker-compose up notebook 
+docker-compose up notebook 
 ```
 
-Now in your browser, navigate to `http://localhost:8888/` to access the notebooks. Follow the example notebooks for more information.
+Now in your browser, navigate to `http://localhost:8888/` to access the notebooks. (Change the port if you have configured different port instead of 8888) 
+Follow the example notebooks for more information.
 
 #### Notes:
-- Jupyter uses the port 8888 by default, so make sure that port is not used by existing Jupyter process, otherwise the previous command would fail.
-- The previous command will start a Jupyter Process in an isolated docker container. So, even if you run the server (step 1) on the same machine, they both will be isolated. Therefore, in that case, make sure not to use `localhsot` or `0.0.0.0` or `127.0.0.1` for `SERVER_IP` in the previous command and instead use the actual IP address of your machine.
+- Make sure the chosen port is not used by existing Jupyter process or any other process, otherwise the previous command would fail.
+- The previous command will start a Jupyter process in an isolated docker container. So, even if you run the server (step 1) on the same machine, they both will be isolated. Therefore, in that case, make sure not to use `localhsot` or `0.0.0.0` or `127.0.0.1` for `HOST` in the `.env` file above and instead use the actual IP address of your machine.
 - If you would like to use the framework on your current installation of Jupyter in your machine, follow this installation guide [here](https://github.com/qcri/collaborativedatascience/wiki/Installation-on-Current-Jupyter-Notebook). 
 
 
