@@ -3,9 +3,9 @@ FROM jupyter/datascience-notebook
 COPY ./ /home/jovyan/work 
 COPY ./requirements.txt /home/jovyan/work/requirements.txt
 WORKDIR /home/jovyan
-RUN git clone https://github.com/meshalawy/qgrid.git 
+RUN git clone --single-branch --branch context_menu_plus_styles https://github.com/meshalawy/qgrid.git 
 WORKDIR /home/jovyan/qgrid
-RUN pip install -e .
+RUN pip install .
 RUN cd js && npm install .
 RUN jupyter nbextension install --py --symlink --sys-prefix qgrid && jupyter nbextension enable --py --sys-prefix qgrid
 
