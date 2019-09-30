@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import CSVReader from 'react-csv-reader'
 import {Redirect} from 'react-router-dom'
 import Dataset from '../api/dataset.js'
-import { Random } from 'meteor/random'
 
 export default class DatasetUploader extends Component{
     constructor(){
@@ -13,18 +12,25 @@ export default class DatasetUploader extends Component{
     }
 
     handleFileLoaded = data => {
-        var datasetId = Random.id()
+        var d = ""
         for (var i=0; i<data.length; i++){
+            if (i>0)
+                d += i-1
+                
+            d+=","
             for (var j=0; j<data[i].length; j++){ 
-              var value = data[i][j]
-              Dataset.insert({
-                  i: (i-1),   // to account for column headers
-                  j,
-                  value,
-                  datasetId,
-                  original:true})
+                var value = data[i][j]
+                d+= value
+                if (j<data[i].length - 1)
+                    d+=','
+                else 
+                    d+='\n'
             }
-          }
+        }
+        var datasetId = Dataset.insert({
+            metadata: {},
+            data: d
+        })
         this.setState({
             datasetId
         })
