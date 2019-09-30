@@ -153,7 +153,7 @@ class CollaborativeDataFrame(pd.DataFrame):
             for (row,col), ـ in to_resolve.iteritems():
                 values = [dfs[action].loc[row,col] for dfs in self.collaborators.values()]
                 # remove nan values
-                values = [v for v in values if ~pd.isnull(v)]
+                values = [v for v in values if not pd.isnull(v)]
                 if policy['option'] == 'majority_vote':
                     # TODO Handle Ties, Return to user to manually resolve.
                     val = max(set(values), key=values.count)
