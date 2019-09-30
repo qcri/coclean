@@ -79,12 +79,12 @@ df.share()
 ```
 Output:
 ```
-http://127.0.0.1/dataset/5ce154fa01ea5499dcecb7a5
+http://10.0.0.27/dataset/5d914a23323c6cf98bd31999
 ```
 
 To work with previously shared dataframes:
 ```python
-df = cdf.CollaborativeDataFrame('http://127.0.0.1/dataset/5ce154fa01ea5499dcecb7a5')
+df = cdf.CollaborativeDataFrame('http://10.0.0.27/dataset/5d914a23323c6cf98bd31999')
 df.loc[0,'Age'] #updating some values like any dataframe
 df.list_my_updates()
 df.commit()
