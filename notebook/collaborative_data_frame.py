@@ -112,7 +112,11 @@ class CollaborativeDataFrame(pd.DataFrame):
             while True:
                 for action in ['update', 'label']: 
                     current, original = get_dfs(action)
-                    new_updates = current.mask((current == original) | (current == last_upload[action]))
+                    try:
+                        new_updates = current.mask((current == original) | (current == last_upload[action]))
+                    except ValueError:
+                        print('The dataframe shape have changed, maybe a column was deleted. The collaboration will stop now.')
+                        return
                     for (index, column), new_value in new_updates.stack().iteritems():
                         self.db_client.db[id].update( 
                             {'index':index, 'column':column, 'user_id': self.user_id, 'type': action},
