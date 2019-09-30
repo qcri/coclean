@@ -134,6 +134,12 @@ class CollaborativeDataFrame(pd.DataFrame):
         return self.mask(self == self.shared_df).stack()
 
     def resolve(self, policy):
+        def defualtdict_to_dict(dd):
+            for k, v in dd.items():
+                if isinstance(v, dict):
+                    dd[k] = defualtdict_to_dict(v)
+            return dict(dd)
+
         resolved_label = pd.DataFrame().reindex_like(self.shared_df)
         resolved_update = pd.DataFrame().reindex_like(self.shared_df)
         metadata = collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(dict)))
@@ -142,6 +148,8 @@ class CollaborativeDataFrame(pd.DataFrame):
             to_resolve = counts.mask(counts<policy['at_least']).stack()
             for (row,col), ـ in to_resolve.iteritems():
                 values = [dfs[action].loc[row,col] for dfs in self.collaborators.values()]
+                # remove nan values
+                values = [v for v in values if ~pd.isnull(v)]
                 if policy['option'] == 'majority_vote':
                     # TODO Handle Ties, Return to user to manually resolve.
                     val = max(set(values), key=values.count)
@@ -152,7 +160,7 @@ class CollaborativeDataFrame(pd.DataFrame):
         for (row,col), val in resolved_update.stack().iteritems():
             df.loc[row, col] = val
 
-        return df, metadata
+        return df, defualtdict_to_dict(metadata)
 
     def setup_widget(self):
         ### grid widget construction:
