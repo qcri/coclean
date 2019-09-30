@@ -50,9 +50,9 @@ class Grid extends React.Component {
             flag:{
                 name:'Flag as dirty',
                 callback: ((key, selection, clickEvent) => { 
-                    const i = selection[0].end.row, j = selection[0].end.col
+                    const row = selection[0].end.row, col = selection[0].end.col
                     var index, column
-                    [index,column] = seq2index(this, i,j)
+                    [index,column] = seq2index(this.refToHotIns.current.hotInstance, row, col)
                     if(!isLabeled(index, column))
                         Meteor.call('dataset.update', {
                             datasetId, index, column, type:'label', new_value: false
@@ -89,6 +89,15 @@ class Grid extends React.Component {
                         const values = getValuesByOthers(index, column)
                         return values.length<=c ; 
                     }
+                })(c),
+                callback:  ((c) =>  {
+                    return ((key, selection, clickEvent) => { 
+                        const row = selection[0].end.row, col = selection[0].end.col
+                        var index, column
+                        [index,column] = seq2index(this.refToHotIns.current.hotInstance, row, col)
+                        const values = getValuesByOthers(index, column)
+                        this.refToHotIns.current.hotInstance.setDataAtCell(row,col,values[c])
+                    })
                 })(c)
             }
         }

@@ -26,7 +26,7 @@ Dataset.getDataset = function (datasetId){
 Meteor.methods({
   'dataset.update'({datasetId, index, column, type, new_value}){
     Dataset.getDataset(datasetId).upsert(
-        {index, column, 'user_id': Meteor.user_id, type},
+        {index, column, 'user_id': Meteor.userId(), type},
         {$set: 
             {index,column, 'user_id': Meteor.userId(), type, new_value}
         }
