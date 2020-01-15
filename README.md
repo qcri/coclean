@@ -1,6 +1,4 @@
-# Collaborative Data Science
-CoClean: A System for Collaborative Data Cleaning
-
+# CoClean: A System for Collaborative Data Cleaning
 
 # Overview
 Data scientist spend huge time curating their datasets and in many cases they need to work collabortivaly with other data scientists on certain tasks (e.g. labeling, error detecting, etc).
