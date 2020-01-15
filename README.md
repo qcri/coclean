@@ -1,5 +1,5 @@
 # Collaborative Data Science
-Collaborative Data Curation EcoSystem for Data Science
+CoClean: A System for Collaborative Data Cleaning
 
 
 # Overview
