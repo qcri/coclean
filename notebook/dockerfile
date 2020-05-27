@@ -10,6 +10,16 @@ RUN cd js && npm install .
 RUN jupyter nbextension install --py --symlink --sys-prefix qgrid && jupyter nbextension enable --py --sys-prefix qgrid
 
 
+# install for jupyter lab
+# Note: intially it is broken for this version of qgrid,
+# but there is a workaround explainded in this article
+# https://medium.com/@tobiaskrabel/how-to-fix-qgrid-in-jupyter-lab-error-displaying-widget-model-not-found-55a948b183a1
+# This will let qgrid run in jupyter lab
+# however, colors and right click menu might not work for jupyter lab
+# and may need to update qgrid version 
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager
+RUN jupyter labextension install @8080labs/qgrid
+
 
 USER root
 RUN apt-get update --fix-missing

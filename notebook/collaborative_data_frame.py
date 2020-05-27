@@ -129,7 +129,8 @@ class CollaborativeDataFrame(pd.DataFrame):
         threading.Thread(target=handle_uploads).start()
 
     def commit(self, *args, **kwargs):
-        print('will commit here') 
+        # TODO commit logic
+        print('committed') 
 
     def refresh(self, *args, **kwargs):
         self.grid_widget.df = self
