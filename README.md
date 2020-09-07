@@ -87,3 +87,9 @@ df.loc[0,'Age'] #updating some values like any dataframe
 df.list_my_updates()
 df.commit()
 ```
+
+# Demo Paper and Video
+Paper: Mashaal Musleh, Mourad Ouzzani, Nan Tang, and AnHai Doan. 2020. CoClean: Collaborative Data Cleaning. In Proceedings of the 2020 ACM SIGMOD International Conference on Management of Data (SIGMOD '20). Association for Computing Machinery, New York, NY, USA, 2757–2760. DOI:https://doi.org/10.1145/3318464.3384698
+
+Video: https://vimeo.com/441058692 (our presentation starts at 39:26)
+
