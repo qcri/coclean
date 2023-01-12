@@ -15,7 +15,7 @@
     "handsontable": "^7.0.0",
     "meteor-node-stubs": "^0.4.1",
     "react": "^16.8.6",
-    "react-csv-reader": "^1.2.2",
+    "react-csv-reader": "^3.5.2",
     "react-dom": "^16.8.6",
     "react-router-dom": "^5.0.0"
   },
